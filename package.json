@@ -9,31 +9,22 @@
     "lint": "next lint"
   },
   "dependencies": {
-<<<<<<< HEAD
+    "@reduxjs/toolkit": "^2.8.2",
+    "@types/react-redux": "^7.1.34",
     "lucide": "^0.522.0",
     "lucide-react": "^0.522.0",
     "next": "15.3.3",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
-=======
-    "@reduxjs/toolkit": "^2.8.2",
-    "axios": "^1.10.0",
-    "next": "15.3.3",
-    "next-auth": "^4.24.11",
-    "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-icons": "^5.5.0",
     "react-redux": "^9.2.0",
-    "react-toastify": "^11.0.5",
-    "swiper": "^11.2.8",
-    "use-debounce": "^10.0.5"
->>>>>>> 0c05effc2d42caa3e442e5be78cba9b282740511
+    "swiper": "^11.2.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
-    "@types/react": "^19",
+    "@types/react": "^19.1.8",
     "@types/react-dom": "^19",
+    "@types/swiper": "^5.4.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
