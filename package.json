@@ -9,25 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
-<<<<<<< HEAD
-    "lucide": "^0.522.0",
-    "lucide-react": "^0.522.0",
-    "next": "15.3.3",
+    "lucide-react": "^0.523.0",
+    "next": "15.3.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
-=======
-    "@reduxjs/toolkit": "^2.8.2",
-    "axios": "^1.10.0",
-    "next": "15.3.3",
-    "next-auth": "^4.24.11",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-icons": "^5.5.0",
-    "react-redux": "^9.2.0",
-    "react-toastify": "^11.0.5",
-    "swiper": "^11.2.8",
-    "use-debounce": "^10.0.5"
->>>>>>> 0c05effc2d42caa3e442e5be78cba9b282740511
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

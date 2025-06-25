@@ -1,4 +1,4 @@
-"use client";
+'use client'
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -8,107 +8,99 @@ import {
   MenuIcon,
   XIcon,
   SearchIcon,
-  ShoppingBagIcon,
-  HeartIcon
+  ShoppingBagIcon
 } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
-import { useCart } from '@/context/CartContext';
 
 const Navbar: React.FC = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
-  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState<boolean>(false);
-  const { user, logout } = useAuth();
-  const { totalItems } = useCart();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const router = useRouter();
+
+  // Dummy user data
+  const user = {
+    isLoggedIn: true,
+    name: 'Alex Johnson',
+    email: 'alex@example.com',
+    avatar:
+      'https://images.unsplash.com/photo-1633332755192-727a05c4013d?auto=format&fit=crop&w=400&q=80'
+  };
+
+  const totalItems = 3;
+
+  const logout = () => {
+    console.log('Dummy logout');
+    router.push('/');
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         {/* Logo */}
-        <div className="flex items-center">
-          <Link href="/" className="text-green-600 font-bold text-2xl">
-            FreshMart
-          </Link>
-        </div>
+        <Link href="/" className="text-green-600 font-bold text-2xl">
+          FreshMart
+        </Link>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
-          <Link href="/" className="text-gray-700 hover:text-green-600 transition-colors">
+          <Link href="/" className="text-gray-700 hover:text-green-600">
             Home
           </Link>
-          <Link href="/catalog" className="text-gray-700 hover:text-green-600 transition-colors">
+          <Link href="/catalog" className="text-gray-700 hover:text-green-600">
             Categories
           </Link>
-          <Link href="/catalog?deals=true" className="text-gray-700 hover:text-green-600 transition-colors">
+          <Link href="/catalog?deals=true" className="text-gray-700 hover:text-green-600">
             Deals
           </Link>
         </nav>
 
-        {/* Search, User, and Cart */}
+        {/* Search & Profile & Cart */}
         <div className="hidden md:flex items-center space-x-6">
           <div className="relative">
             <input
               type="text"
               placeholder="Search products..."
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-full text-sm focus:ring-2 focus:ring-green-500 focus:outline-none text-gray-500"
             />
             <SearchIcon className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
           </div>
 
+          {/* Profile */}
           <div className="relative">
-            <button
-              onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-              className="text-gray-700 hover:text-green-600 transition-colors"
-            >
-              {user?.isLoggedIn ? (
+            <button onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}>
+              {user.isLoggedIn ? (
                 <img
                   src={user.avatar}
                   alt={user.name}
-                  className="h-8 w-8 rounded-full object-cover border-2 border-green-500"
+                  className="h-8 w-8 rounded-full border-2 border-green-500 object-cover"
                 />
               ) : (
-                <UserIcon className="h-6 w-6" />
+                <UserIcon className="h-6 w-6 text-gray-700" />
               )}
             </button>
             {isProfileDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
-                {user?.isLoggedIn ? (
-                  <>
-                    <div className="px-4 py-2 border-b border-gray-100">
-                      <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                      <p className="text-xs text-gray-500">{user.email}</p>
-                    </div>
-                    <Link href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      Your Profile
-                    </Link>
-                    <Link href="/orders" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      Order History
-                    </Link>
-                    <button
-                      onClick={() => {
-                        logout();
-                        router.push('/');
-                      }}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Sign Out
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <Link href="/login" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      Sign In
-                    </Link>
-                    <Link href="/register" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      Register
-                    </Link>
-                  </>
-                )}
+              <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-md z-50">
+                <div className="px-4 py-2 border-b">
+                  <p className="font-semibold text-sm text-black">{user.name}</p>
+                  <p className="text-xs text-gray-500">{user.email}</p>
+                </div>
+                <Link href="/profile" className="block px-4 py-2 text-sm hover:bg-gray-100 text-black">
+                  Your Profile
+                </Link>
+                <Link href="/orders" className="block px-4 py-2 text-sm hover:bg-gray-100 text-black">
+                  Order History
+                </Link>
+                <button
+                  onClick={logout}
+                  className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-black"
+                >
+                  Sign Out
+                </button>
               </div>
             )}
           </div>
 
-          <Link href="/cart" className="text-gray-700 hover:text-green-600 transition-colors relative">
+          {/* Cart */}
+          <Link href="/cart" className="relative text-gray-700 hover:text-green-600">
             <ShoppingCartIcon className="h-6 w-6" />
             {totalItems > 0 && (
               <span className="absolute -top-2 -right-2 bg-green-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
@@ -126,68 +118,40 @@ const Navbar: React.FC = () => {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-white border-t">
-          <div className="container mx-auto px-4 py-3 flex flex-col space-y-3">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search products..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
-              <SearchIcon className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-            </div>
-            {user?.isLoggedIn && (
-              <div className="flex items-center space-x-3 py-3 border-b border-gray-100">
-                <img
-                  src={user.avatar}
-                  alt={user.name}
-                  className="h-10 w-10 rounded-full object-cover border-2 border-green-500"
-                />
-                <div>
-                  <p className="font-medium text-gray-900">{user.name}</p>
-                  <p className="text-xs text-gray-500">{user.email}</p>
-                </div>
-              </div>
-            )}
-            <Link href="/" className="text-gray-700 py-2 border-b border-gray-100">
-              Home
+        <div className="md:hidden border-t bg-white px-4 py-3 space-y-3">
+          <input
+            type="text"
+            placeholder="Search products..."
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full text-sm focus:ring-2 focus:ring-green-500 focus:outline-none text-gray-400"
+          />
+          <SearchIcon className="absolute left-6 top-[74px] h-4 w-4 text-gray-400" />
+          <Link href="/" className="block text-gray-700">
+            Home
+          </Link>
+          <Link href="/catalog" className="block text-gray-700">
+            Categories
+          </Link>
+          <Link href="/catalog?deals=true" className="block text-gray-700">
+            Deals
+          </Link>
+          <Link href="/orders" className="block text-gray-700">
+            Orders
+          </Link>
+          {user.isLoggedIn ? (
+            <button
+              onClick={logout}
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-full text-sm"
+            >
+              Sign Out
+            </button>
+          ) : (
+            <Link
+              href="/login"
+              className="block w-full text-center bg-green-600 text-white py-2 rounded-full text-sm"
+            >
+              Sign In
             </Link>
-            <Link href="/catalog" className="text-gray-700 py-2 border-b border-gray-100">
-              Categories
-            </Link>
-            <Link href="/catalog?deals=true" className="text-gray-700 py-2 border-b border-gray-100">
-              Deals
-            </Link>
-            <div className="flex justify-between items-center py-2">
-              <Link href="/profile" className="flex items-center space-x-2 text-gray-700">
-                <UserIcon className="h-5 w-5" />
-                <span>Account</span>
-              </Link>
-              <Link href="/cart" className="flex items-center space-x-2 text-gray-700">
-                <ShoppingCartIcon className="h-5 w-5" />
-                <span>Cart ({totalItems})</span>
-              </Link>
-            </div>
-            <Link href="/orders" className="flex items-center space-x-2 text-gray-700 py-2 border-b border-gray-100">
-              <ShoppingBagIcon className="h-5 w-5" />
-              <span>Orders</span>
-            </Link>
-            {user?.isLoggedIn ? (
-              <button
-                onClick={() => {
-                  logout();
-                  router.push('/');
-                }}
-                className="bg-green-600 hover:bg-green-700 text-white py-2 rounded-full text-sm font-medium transition-colors"
-              >
-                Sign Out
-              </button>
-            ) : (
-              <Link href="/login" className="bg-green-600 hover:bg-green-700 text-white py-2 rounded-full text-sm font-medium transition-colors text-center">
-                Sign In
-              </Link>
-            )}
-          </div>
+          )}
         </div>
       )}
     </header>
