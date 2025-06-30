@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import SuperAdminDashboard from "@/pages/home-page/components/dashbordLayout";
 import { Montserrat } from 'next/font/google';
 import { Footer } from "@/components/Footer";
 
@@ -35,11 +36,13 @@ export default function RootLayout({
       <html lang="en">
         <body
           className={`${montserrat.className} antialiased`}
-        > <Navbar />
-          {children}
+        >
+          <SuperAdminDashboard>
+            {children}
+          </SuperAdminDashboard>
+          <Footer />
         </body>
       </html>
-      <Footer />
     </>
   );
 }
