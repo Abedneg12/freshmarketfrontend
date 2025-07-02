@@ -4,20 +4,41 @@ import { BestSellers } from "@/pages/BestSellers";
 import { Discounts } from "@/pages/Discounts";
 import { LocationBased } from "@/pages/LocationBased";
 
-interface HomeProps {
-  userLocation: {
-    lat: number;
-    lng: number;
-  } | null;
-  locationError: string | null;
-}
-export default function Home ({ userLocation, locationError }: HomeProps) {
+import { useEffect } from "react";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+
+import { fetchRecommendations } from "@/lib/redux/slice/storeSlice";
+import { setLocationSuccess, setLocationError } from "@/lib/redux/slice/locationSlice";
+
+export default function Home () {
+  const dispatch = useAppDispatch();
+  const {coordinates, permission} = useAppSelector(state => state.location);
+
+  useEffect(() => {
+    if (permission === "idle") {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const {latitude, longitude} = position.coords;
+          dispatch(setLocationSuccess({lat: latitude, lng: longitude}));
+        },
+        (error) => {
+          dispatch(setLocationError(error.message));
+        }
+      );
+    }
+  }, [dispatch, permission]);
+
+  useEffect(() => {
+    if (coordinates) {
+      dispatch(fetchRecommendations(coordinates));
+    }
+  }, [coordinates, dispatch]);
   return (
     <>
       <Hero />
       <BestSellers />
       <Discounts />
-      <LocationBased userLocation={userLocation} locationError={locationError}/>
+      <LocationBased />
     </>
   );
 }
