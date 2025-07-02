@@ -3,8 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import SuperAdminDashboard from "@/pages/home-page/components/dashbordLayout";
-import { Montserrat } from 'next/font/google';
+import { Montserrat } from "next/font/google";
 import { Footer } from "@/components/Footer";
+import { StoreProvider } from "@/lib/redux/storeProvider";
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -12,8 +13,8 @@ const geistSans = Geist({
 });
 
 const montserrat = Montserrat({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 const geistMono = Geist_Mono({
@@ -32,17 +33,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <>
+    <StoreProvider>
       <html lang="en">
-        <body
-          className={`${montserrat.className} antialiased`}
-        >
-          <SuperAdminDashboard>
-            {children}
-          </SuperAdminDashboard>
-          <Footer />
+        <body className={`${montserrat.className} antialiased`}>
+          <Navbar />
+          {children}
         </body>
       </html>
-    </>
+      <Footer />
+    </StoreProvider>
   );
 }

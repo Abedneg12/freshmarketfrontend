@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
-import { StoreRecommendation } from "@/lib/interface/store";
+import { StoreRecommendation } from "@/lib/interface/market";
 
 interface StoreState {
   data: StoreRecommendation[];
@@ -18,7 +18,7 @@ export const fetchRecommendations = createAsyncThunk(
   async ({ lat, lng }: { lat: number; lng: number }, thunkAPI) => {
     try {
       const response = await axios.get<StoreRecommendation[]>(
-        `http://localhost:8000/api/stores/recommendations?lat=${lat}&lng=${lng}`
+        `${process.env.NEXT_PUBLIC_API_URL}/api/stores/recommendations?lat=${lat}&lng=${lng}`
       );
       return response.data as StoreRecommendation[];
     } catch (error: any) {
