@@ -84,7 +84,7 @@ export default function RegisterPage() {
                   required
                   value={formData.fullName}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
                 />
               </div>
             </div>
@@ -103,7 +103,7 @@ export default function RegisterPage() {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
                 />
               </div>
             </div>
@@ -121,7 +121,7 @@ export default function RegisterPage() {
                   type="text"
                   value={formData.referralCode}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
                 />
               </div>
             </div>

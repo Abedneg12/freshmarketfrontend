@@ -1,8 +1,8 @@
 "use client";
-import { Hero } from "@/pages/Hero";
-import { BestSellers } from "@/pages/BestSellers";
-import { Discounts } from "@/pages/Discounts";
-import { LocationBased } from "@/pages/LocationBased";
+import { Hero } from "@/pages/Hero-page";
+import { BestSellers } from "@/pages/BestSellers-page";
+import { Discounts } from "@/pages/Discounts-page";
+import { LocationBased } from "@/pages/LocationBased-page";
 
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
