@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
-import SuperAdminDashboard from "@/pages/home-page/components/dashbordLayout";
+import SuperAdminDashboard from "@/pages/SuperAdmin-page/components/dashbordLayout";
 import { Montserrat } from "next/font/google";
 import { Footer } from "@/components/Footer";
 import { StoreProvider } from "@/lib/redux/storeProvider";
@@ -36,11 +36,11 @@ export default function RootLayout({
     <StoreProvider>
       <html lang="en">
         <body className={`${montserrat.className} antialiased`}>
-          <Navbar />
-          {children}
+          <SuperAdminDashboard>
+            {children}
+          </SuperAdminDashboard>
         </body>
       </html>
-      <Footer />
     </StoreProvider>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { DiscountForm } from './components/DiscountForm';
+import { DiscountForm } from '../../app/components/discount/DiscountForm';
 import { PlusIcon, SearchIcon } from 'lucide-react';
 import { apiUrl, tempToken } from '../config';
 import { DataTable } from '@/app/components/common/DataTable';
@@ -9,8 +9,6 @@ export default function DiscountPage() {
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const categories = ['Produce', 'Dairy', 'Bakery', 'Meat', 'Frozen', 'Beverages', 'Snacks', 'Canned Goods'];
   const handleAddDiscount = () => {
     setIsEditing(false);
     setShowForm(true);
@@ -52,8 +50,6 @@ export default function DiscountPage() {
     };
 
     fetchDiscounts();
-
-    console.log(discount);
   }, []);
 
   const columns = [
