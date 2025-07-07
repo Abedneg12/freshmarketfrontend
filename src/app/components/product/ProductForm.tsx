@@ -1,25 +1,16 @@
+// app/components/product/ProductForm.tsx
+
 import React, { useEffect, useState } from 'react';
-import { XIcon, PlusIcon, ImageIcon } from 'lucide-react';
+import { XIcon, PlusIcon, ImageIcon, MinusIcon } from 'lucide-react';
 import { Market } from '@/lib/interface/market';
 import { apiUrl, tempToken } from '@/pages/config';
 import { Category } from '@/lib/interface/category.type';
 import axios from 'axios';
-import { InventoryStock, Product } from '@/lib/interface/product.type';
+import { Product, StoreStock } from '@/lib/interface/product.type';
 
-// Define the shape of the data that onSubmit will receive
-interface ProductFormData {
-  name: string;
-  categoryId: string;
-  basePrice: string; // Keep as string here, convert to number in parent
-  description: string;
-  images: string[];
-  storeAllocations: InventoryStock[];
-}
-
+// The onSubmit prop will now receive a FormData object
 interface ProductFormProps {
-  // THIS IS THE CRUCIAL CHANGE:
-  // onSubmit should now accept ProductFormData, not React.FormEvent
-  onSubmit: (data: ProductFormData) => void;
+  onSubmit: (formData: FormData) => void; // Expect FormData here
   onCancel: () => void;
   isEditing: boolean;
   editingProduct?: Product | null;
@@ -32,14 +23,21 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   editingProduct,
 }) => {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [storeAllocations, setStoreAllocations] = useState<InventoryStock[]>([]);
+  const [storeAllocations, setStoreAllocations] = useState<StoreStock[]>([]);
   const [selectedStore, setSelectedStore] = useState('');
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [basePrice, setBasePrice] = useState('');
   const [description, setDescription] = useState('');
-  const [images, setImages] = useState<string[]>([]);
+
+  // Image states:
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]); // URLs of images already on the server (just the filename/path part)
+  const [newImageFiles, setNewImageFiles] = useState<File[]>([]); // Actual File objects for newly added images
+  const [previewImageUrls, setPreviewImageUrls] = useState<string[]>([]); // For immediate display (URL.createObjectURL or full existing URLs)
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]); // URLs of existing images to be removed (just the filename/path part)
+
   const [quantity, setQuantity] = useState('');
+  const [transactionType, setTransactionType] = useState<'IN' | 'OUT'>('IN');
 
   const markets = [{
     id: 1,
@@ -58,56 +56,124 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       setCategoryId(editingProduct.category?.id?.toString() || '');
       setBasePrice(editingProduct.basePrice?.toString() || '');
       setDescription(editingProduct.description || '');
-      setImages(editingProduct.images?.map(img => img.imageUrl) || []);
-      setStoreAllocations(editingProduct.storeAllocation || []);
+
+      // Initialize existing image URLs and generate previews for them
+      const initialExistingImageUrls = editingProduct.images?.map(img => img.imageUrl) || [];
+      setExistingImageUrls(initialExistingImageUrls);
+      setPreviewImageUrls(initialExistingImageUrls.map(url => `${apiUrl}${url}`)); // Prepend apiUrl for display
+      setNewImageFiles([]); // Clear any new files when switching to edit mode
+      setImagesToDelete([]); // Clear deletions when starting a new edit session
+      setStoreAllocations([]);
+    } else {
+      // Clear all states for adding a new product
+      setName('');
+      setCategoryId('');
+      setBasePrice('');
+      setDescription('');
+      setExistingImageUrls([]);
+      setNewImageFiles([]);
+      setPreviewImageUrls([]);
+      setImagesToDelete([]);
+      setStoreAllocations([]);
+      setSelectedStore('');
+      setQuantity('');
+      setTransactionType('IN');
     }
   }, [editingProduct]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      // You are correctly handling image previews here.
-      // For actual submission, you might need to upload these files
-      // to a server and get their URLs, or encode them (e.g., base64).
-      const newImages = Array.from(files).map(file => URL.createObjectURL(file));
-      setImages(prev => [...prev, ...newImages]);
+      const filesArray = Array.from(files);
+      setNewImageFiles(prev => [...prev, ...filesArray]);
+
+      // Create object URLs for immediate preview
+      const newPreviews = filesArray.map(file => URL.createObjectURL(file));
+      setPreviewImageUrls(prev => [...prev, ...newPreviews]);
     }
   };
-  const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
+
+  const removeImage = (indexToRemove: number) => {
+    // Determine if the image being removed is an existing one or a newly added one
+    const existingImagesCount = existingImageUrls.length;
+
+    if (indexToRemove < existingImagesCount) {
+      // It's an existing image, its URL is already in `existingImageUrls`
+      const imageUrl = existingImageUrls[indexToRemove];
+
+      // Remove from the list of existing images to keep
+      setExistingImageUrls(prev => prev.filter((_, i) => i !== indexToRemove));
+      // Add to the list of images to delete on the server
+      setImagesToDelete(prev => [...prev, imageUrl]);
+
+      // Remove from preview, assuming original order for matching
+      setPreviewImageUrls(prev => prev.filter((_, i) => i !== indexToRemove));
+    } else {
+      // It's a newly added image (File object)
+      const newFileIndex = indexToRemove - existingImagesCount;
+      const fileToRevokeUrl = previewImageUrls[indexToRemove]; // Get the object URL for revocation
+
+      setNewImageFiles(prev => prev.filter((_, i) => i !== newFileIndex));
+      setPreviewImageUrls(prev => prev.filter((_, i) => i !== indexToRemove));
+      URL.revokeObjectURL(fileToRevokeUrl); // Clean up memory
+    }
   };
 
-  const addStoreAllocation = () => {
-    if (selectedStore && quantity && !isNaN(parseInt(quantity))) {
+  const handleStockAdjustment = () => {
+    const qty = parseInt(quantity);
+    if (selectedStore && quantity && !isNaN(qty) && qty > 0) {
       const store = markets.find(m => String(m.id) === selectedStore);
       if (store) {
         setStoreAllocations(prev => [...prev, {
           storeId: store.id,
-          quantity: parseInt(quantity),
-          type: 'IN',
-        } as InventoryStock]);
+          quantity: qty,
+          type: transactionType,
+        } as StoreStock]);
       }
       setSelectedStore('');
       setQuantity('');
     }
   };
-  const removeStoreAllocation = (storeId: number) => {
-    setStoreAllocations(prev => prev.filter(allocation => allocation.storeId !== storeId));
+
+  const removeStoreAllocation = (index: number) => {
+    setStoreAllocations(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = () => {
-    onSubmit({
-      name,
-      categoryId,
-      basePrice,
-      description,
-      images, // `images` state already holds the URLs/base64 strings
-      storeAllocations,
+  // This function will now create and pass a FormData object
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault(); // Prevent default form submission
+
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('categoryId', categoryId);
+    formData.append('basePrice', basePrice);
+    formData.append('description', description);
+
+    // Append URLs of images that were ALREADY on the server and are KEPT
+    if (existingImageUrls.length > 0) {
+      formData.append('keptImageUrls', JSON.stringify(existingImageUrls));
+    }
+
+    // Append URLs of images that were on the server and are marked for DELETION
+    if (imagesToDelete.length > 0) {
+      formData.append('imagesToDelete', JSON.stringify(imagesToDelete));
+    }
+
+    // Append new image File objects using the key 'images' to match Multer config
+    newImageFiles.forEach((file) => {
+      formData.append(`images`, file); // Use 'images' as the key
     });
+
+    // Append store allocations as a JSON string
+    if (storeAllocations.length > 0) {
+      formData.append('storeAllocations', JSON.stringify(storeAllocations));
+    }
+
+    onSubmit(formData); // Pass the FormData object to the parent
   };
 
   useEffect(() => {
-    const fetchCaregories = async () => {
+    const fetchCategories = async () => {
       try {
         const res = await axios.get(
           `${apiUrl}/category`,
@@ -124,24 +190,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         setCategories([]);
       }
     };
-
-    const fetchMarket = async () => {
-      try {
-        const res = await axios.get(
-          `${apiUrl}/category`, // This should likely be `${apiUrl}/market`
-          {
-            headers: {
-              Authorization: `Bearer ${tempToken}`
-            }
-          }
-        );
-      } catch (error) {
-        alert('Failed to fetch Markets');
-        console.error('Failed to fetch Markets:', error);
-      }
-    };
-
-    fetchCaregories();
+    fetchCategories();
   }, []);
 
   return (
@@ -150,7 +199,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         <h3 className="text-lg font-medium text-gray-900 border-b pb-4">
           {isEditing ? 'Edit Product' : 'Add New Product'}
         </h3>
-        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-8">
           {/* Basic Information */}
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div>
@@ -200,13 +249,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-4">
               Product Images
             </label>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6">
-              {images.map((image, index) => <div key={index} className="relative group">
-                <img src={isEditing ? `${apiUrl}${image}` : image} alt={`Product ${index + 1}`} className="h-24 w-24 object-cover rounded-lg" />
-                <button type="button" onClick={() => removeImage(index)} className="absolute -top-2 right-5 bg-red-100 rounded-full p-1 text-red-600 hover:bg-red-200">
-                  <XIcon className="h-4 w-4" />
-                </button>
-              </div>)}
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
+              {previewImageUrls.map((image, index) => (
+                <div key={image} className="relative group">
+                  <img src={image} alt={`Product ${index + 1}`} className="h-24 w-24 object-cover rounded-lg" />
+                  <button type="button" onClick={() => removeImage(index)} className="absolute -top-2 right-5 bg-red-100 rounded-full p-1 text-red-600 hover:bg-red-200">
+                    <XIcon className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
               <label className="h-24 w-24 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 cursor-pointer">
                 <input
                   type="file"
@@ -236,45 +287,89 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           {isEditing && (
             <div>
               <h4 className="text-sm font-medium text-gray-700 mb-4">
-                Store Allocation
+                Store Stock Adjustments
               </h4>
-              {/* Current Allocations */}
               <div className="mb-4 space-y-2">
-                {storeAllocations.map(allocation => {
-                  const store = markets.find(s => s.id === allocation.storeId);
-                  return <div key={allocation.storeId} className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
-                    <span className="text-sm text-gray-700">{store?.name}</span>
-                    <div className="flex items-center space-x-4">
+                <p className="text-sm font-medium text-gray-700">Current Stock Levels:</p>
+                {editingProduct?.stocks?.map(market => {
+                  const currentStock = editingProduct?.stocks?.find(s => s.storeId === market.storeId);
+                  return (
+                    <div key={`current-stock-${market.id}`} className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
+                      <span className="text-sm text-gray-700">{market.store.name}</span>
                       <span className="text-sm text-gray-600">
-                        {allocation.quantity} units
+                        {currentStock ? currentStock.quantity : 0} units
                       </span>
-                      <button type="button" onClick={() => removeStoreAllocation(allocation.storeId)} className="text-red-600 hover:text-red-800">
-                        <XIcon className="h-4 w-4" />
-                      </button>
                     </div>
-                  </div>;
+                  );
                 })}
               </div>
-              {/* Add New Allocation */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+
+              {/* New Stock Adjustment */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 items-end">
                 <div>
-                  <select name="store" id="store" value={selectedStore} onChange={e => setSelectedStore(e.target.value)} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm">
+                  <label htmlFor="selectStore" className="block text-sm font-medium text-gray-700">
+                    Store
+                  </label>
+                  <select name="store" id="selectStore" value={selectedStore} onChange={e => setSelectedStore(e.target.value)} className="block w-full rounded-md border-gray-30-0 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm">
                     <option value="">Select store</option>
-                    {markets.filter(store => !storeAllocations.some(a => a.storeId === store.id)).map(store => <option key={store.id} value={store.id}>
+                    {markets.map(store => <option key={store.id} value={store.id}>
                       {store.name}
                     </option>)}
                   </select>
                 </div>
                 <div>
+                  <label htmlFor="transactionType" className="block text-sm font-medium text-gray-700">
+                    Type
+                  </label>
+                  <select
+                    id="transactionType"
+                    value={transactionType}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setTransactionType(e.target.value as 'IN' | 'OUT')}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                  >
+                    <option value="IN">Add Stock</option>
+                    <option value="OUT">Remove Stock</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">
+                    Quantity
+                  </label>
                   <input name="quantity" id="quantity" type="number" value={quantity} onChange={e => setQuantity(e.target.value)} placeholder="Enter quantity" className="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" />
                 </div>
                 <div>
-                  <button type="button" onClick={addStoreAllocation} disabled={!selectedStore || !quantity} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-300 disabled:cursor-not-allowed">
-                    <PlusIcon className="h-4 w-4 mr-2" />
-                    Add Allocation
+                  <button type="button" onClick={handleStockAdjustment} disabled={!selectedStore || !quantity || parseInt(quantity) <= 0} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-300 disabled:cursor-not-allowed">
+                    {transactionType === 'IN' ? (
+                      <PlusIcon className="h-4 w-4 mr-2" />
+                    ) : (
+                      <MinusIcon className="h-4 w-4 mr-2" />
+                    )}
+                    {transactionType === 'IN' ? 'Add Stock' : 'Remove Stock'}
                   </button>
                 </div>
               </div>
+
+              {/* List of pending adjustments */}
+              {storeAllocations.length > 0 && (
+                <div className="mt-4">
+                  <h5 className="text-sm font-medium text-gray-700 mb-2">Pending Adjustments:</h5>
+                  <div className="space-y-2">
+                    {storeAllocations.map((allocation, index) => {
+                      const store = markets.find(m => m.id === allocation.storeId);
+                      return (
+                        <div key={`${allocation.storeId}-${allocation.type}-${index}`} className="flex items-center justify-between bg-blue-50 p-3 rounded-md">
+                          <span className="text-sm text-gray-700">
+                            {store?.name}: {allocation.type === 'IN' ? '+' : '-'} {allocation.quantity} units
+                          </span>
+                          <button type="button" onClick={() => setStoreAllocations(prev => prev.filter((_, i) => i !== index))} className="text-red-600 hover:text-red-800">
+                            <XIcon className="h-4 w-4" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
           {/* Form Actions */}

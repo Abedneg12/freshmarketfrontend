@@ -1,9 +1,11 @@
+// pages/InventoryPage.tsx
+
 import React, { useEffect, useState } from 'react';
 import { ProductForm } from '../../app/components/product/ProductForm';
 import { PlusIcon, SearchIcon } from 'lucide-react';
 import { DataTable } from '@/app/components/common/DataTable';
 import { apiUrl, tempToken } from '../config';
-import { InventoryStock, Product } from '../../lib/interface/product.type';
+import { Product, StoreStock } from '../../lib/interface/product.type';
 import axios from 'axios';
 import { Category } from '@/lib/interface/category.type';
 
@@ -13,117 +15,170 @@ export default function InventoryPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+
   const handleAddProduct = () => {
     setIsEditing(false);
     setEditingProduct(null);
     setShowProductForm(true);
   };
+
   const handleEditProduct = (product: Product) => {
     setIsEditing(true);
     setEditingProduct(product);
     setShowProductForm(true);
   };
-  const handleDeleteProduct = (productId: string | number) => {
-    // In a real app, this would delete the product
+
+  const handleDeleteProduct = async (productId: string | number) => {
     alert(`Product ${productId} would be deleted`);
-  };
-  const handleFormSubmit = async (data: {
-    name: string;
-    categoryId: string;
-    basePrice: string;
-    description: string;
-    images: string[];
-    storeAllocations: InventoryStock[];
-  }) => {
     try {
+      await axios.delete(`${apiUrl}/product/${productId}`, {
+        headers: {
+          Authorization: `Bearer ${tempToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      fetchProducts();
+    } catch (err) {
+      alert(`Fail to delete product`);
+    }
+  };
+
+  const handleFormSubmit = async (formData: FormData) => {
+    try {
+      let keptImageUrls: string[] = [];
+      const keptImagesJson = formData.get('keptImageUrls') as string;
+      if (keptImagesJson) {
+        keptImageUrls = JSON.parse(keptImagesJson);
+        formData.delete('keptImageUrls'); // Remove from formData after parsing
+      }
+
+      let imagesToDelete: string[] = [];
+      const imagesToDeleteJson = formData.get('imagesToDelete') as string;
+      if (imagesToDeleteJson) {
+        imagesToDelete = JSON.parse(imagesToDeleteJson);
+        formData.delete('imagesToDelete'); // Remove from formData
+      }
+
+      let storeAllocations: StoreStock[] = [];
+      const storeAllocationsJson = formData.get('storeAllocations') as string;
+      if (storeAllocationsJson) {
+        storeAllocations = JSON.parse(storeAllocationsJson);
+        formData.delete('storeAllocations'); // Remove from formData
+      }
+
       if (isEditing && editingProduct) {
-        // Prepare product data for update
-        const productUpdatePayload = {
-          name: data.name,
-          categoryId: data.categoryId,
-          basePrice: parseFloat(data.basePrice), // Convert back to number
-          description: data.description,
-          images: data.images.map(imageUrl => ({ imageUrl })), // Reformat if needed for your backend
-        };
-        
+        formData.append('keptImageUrls', JSON.stringify(keptImageUrls));
+        formData.append('imagesToDelete', JSON.stringify(imagesToDelete));
+        formData.append('storeAllocations', JSON.stringify(storeAllocations));
+
         await axios.put(
           `${apiUrl}/product/${editingProduct.id}`,
-          productUpdatePayload,
-          { headers: { Authorization: `Bearer ${tempToken}` } }
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${tempToken}`,
+            }
+          }
         );
         alert('Product updated');
 
-        // Handle store allocations separately using the received storeAllocations
-        if (editingProduct.id) {
-          const allocationPromises = data.storeAllocations.map(async (allocation: InventoryStock) => {
-            // Check if allocation already exists (if your API needs to differentiate create/update)
-            // For simplicity, assuming these are new or updated allocations for this example
+        if (editingProduct.id && storeAllocations.length > 0) {
+          const adjustmentPromises = storeAllocations.map(async (allocation: StoreStock) => {
             await axios.post(
               `${apiUrl}/inventory/stock`,
               {
                 productId: editingProduct.id,
                 storeId: allocation.storeId,
                 quantity: allocation.quantity,
-                type: allocation.type, // 'IN' or whatever is relevant
+                type: allocation.type,
+              },
+              { headers: { Authorization: `Bearer ${tempToken}` } }
+            );
+          });
+          await Promise.all(adjustmentPromises);
+          alert('Stock adjustments applied successfully');
+        }
+
+      } else {
+        if (storeAllocations.length > 0) {
+          formData.append('storeAllocations', JSON.stringify(storeAllocations));
+        }
+        const res = await axios.post(
+          `${apiUrl}/product`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${tempToken}`,
+            }
+          }
+        );
+        alert('Product added');
+
+        const newProductId = (res.data as Product).id;
+        if (newProductId && storeAllocations.length > 0) {
+          const allocationPromises = storeAllocations.map(async (allocation: StoreStock) => {
+            await axios.post(
+              `${apiUrl}/inventory/stock`,
+              {
+                productId: newProductId,
+                storeId: allocation.storeId,
+                quantity: allocation.quantity,
+                type: allocation.type,
               },
               { headers: { Authorization: `Bearer ${tempToken}` } }
             );
           });
           await Promise.all(allocationPromises);
-          alert('Stock updated successfully');
+          alert('Initial stock allocated successfully');
         }
-
-      } else {
-        // Add product
-        const newProductPayload = {
-          name: data.name,
-          categoryId: data.categoryId,
-          basePrice: parseFloat(data.basePrice),
-          description: data.description,
-          images: data.images.map(imageUrl => ({ imageUrl })),
-          storeAllocation: data.storeAllocations, // Pass allocations for new product if your API supports it
-        };
-
-        await axios.post(
-          `${apiUrl}/product`,
-          newProductPayload,
-          { headers: { Authorization: `Bearer ${tempToken}` } }
-        );
-        alert('Product added');
       }
+
       setShowProductForm(false);
-      // Optionally, refresh product list here
+      fetchProducts();
     } catch (err) {
       alert('Failed to save product');
-      console.error(err); // Log the error for debugging
+      console.error('Save product error:', err);
     }
   };
+
   const handleFormCancel = () => {
     setShowProductForm(false);
   };
 
   const [products, setProducts] = useState<Product[]>([]);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await axios.get(
-          `${apiUrl}/product`,
-          {
-            headers: {
-              Authorization: `Bearer ${tempToken}`
-            }
+  const fetchProducts = async () => {
+    try {
+      const res = await axios.get(
+        `${apiUrl}/product`,
+        {
+          headers: {
+            Authorization: `Bearer ${tempToken}`
           }
-        );
-        setProducts(res.data as Product[]);
-      } catch (error) {
-        alert('Failed to fetch Products');
-        console.error('Failed to fetch Products:', error);
-        setProducts([]);
-      }
-    };
+        }
+      );
+      setProducts(res.data as Product[]);
+    } catch (error) {
+      alert('Failed to fetch Products');
+      console.error('Failed to fetch Products:', error);
+      setProducts([]);
+    }
+  };
+
+  useEffect(() => {
     fetchProducts();
   }, []);
+
+  const markets = [{
+    id: 1,
+    name: 'Downtown Grocery'
+  }, {
+    id: 2,
+    name: 'Westside Market'
+  }, {
+    id: 3,
+    name: 'Northside Pantry'
+  }];
 
   const columns = [
     {
@@ -162,12 +217,14 @@ export default function InventoryPage() {
       accessor: "stores",
       render: (product: Product) => (
         <div className="space-y-1">
-          {product.storeAllocation?.map((store: any, idx: number) => (
-            <div key={idx} className="flex justify-between">
-              <span>{store.name}:</span>
-              <span>{store.stock}</span>
-            </div>
-          ))}
+          {product.stocks?.map((storeStock: StoreStock, idx: number) => {
+            return (
+              <div key={idx} className="flex space-x-2">
+                <span>{storeStock?.store.name}:</span>
+                <span>{storeStock?.quantity}</span>
+              </div>
+            );
+          })}
         </div>
       ),
     },
@@ -200,7 +257,7 @@ export default function InventoryPage() {
           onSubmit={handleFormSubmit}
           onCancel={handleFormCancel}
           isEditing={isEditing}
-          editingProduct={editingProduct} // Pass the product here
+          editingProduct={editingProduct}
         />
       ) : (
         <DataTable

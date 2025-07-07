@@ -1,3 +1,5 @@
+import { Market } from "./market";
+
 export interface ProductImage {
   id: number;
   imageUrl: string;
@@ -11,8 +13,9 @@ export interface ProductCategory {
 export interface StoreStock {
   id: number;
   storeId: number;
-  storeName: string;
+  store: Market; 
   quantity: number;
+  type: 'IN' | 'OUT'; // Assuming type can be 'IN' or 'OUT'
 }
 
 export interface Product {
@@ -25,12 +28,4 @@ export interface Product {
   createdAt: string; // ISO date string
   images?: ProductImage[];
   stocks?: StoreStock[];
-  storeAllocation?: InventoryStock[]; // Store distribution
-}
-
-export interface InventoryStock {
-  id: number;
-  storeId: number;
-  type: string;
-  quantity: number;
 }
