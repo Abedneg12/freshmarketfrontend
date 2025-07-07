@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
+import Navbar from "@/app/components/Navbar";
 import SuperAdminDashboard from "@/pages/SuperAdmin-page/components/dashbordLayout";
 import { Montserrat } from "next/font/google";
-import { Footer } from "@/components/Footer";
+import { Footer } from "@/app/components/Footer";
 import { StoreProvider } from "@/lib/redux/storeProvider";
 
 const geistSans = Geist({
