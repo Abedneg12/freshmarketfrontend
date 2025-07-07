@@ -1,34 +1,237 @@
-import React, { useState } from 'react';
-import { ProductTable } from './component/ProductTable';
-import { ProductForm } from './component/ProductForm';
+// pages/InventoryPage.tsx
+
+import React, { useEffect, useState } from 'react';
+import { ProductForm } from '../../app/components/product/ProductForm';
 import { PlusIcon, SearchIcon } from 'lucide-react';
+import { DataTable } from '@/app/components/common/DataTable';
+import { apiUrl, tempToken } from '../config';
+import { Product, StoreStock } from '../../lib/interface/product.type';
+import axios from 'axios';
+import { Category } from '@/lib/interface/category.type';
+
 export default function InventoryPage() {
-  const [showForm, setShowForm] = useState(false);
+  const [showProductForm, setShowProductForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const categories = ['Produce', 'Dairy', 'Bakery', 'Meat', 'Frozen', 'Beverages', 'Snacks', 'Canned Goods'];
+
   const handleAddProduct = () => {
     setIsEditing(false);
-    setShowForm(true);
+    setEditingProduct(null);
+    setShowProductForm(true);
   };
-  const handleEditProduct = (product: any) => {
+
+  const handleEditProduct = (product: Product) => {
     setIsEditing(true);
-    setShowForm(true);
+    setEditingProduct(product);
+    setShowProductForm(true);
   };
-  const handleDeleteProduct = (productId: string) => {
-    // In a real app, this would delete the product
+
+  const handleDeleteProduct = async (productId: string | number) => {
     alert(`Product ${productId} would be deleted`);
+    try {
+      await axios.delete(`${apiUrl}/product/${productId}`, {
+        headers: {
+          Authorization: `Bearer ${tempToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      fetchProducts();
+    } catch (err) {
+      alert(`Fail to delete product`);
+    }
   };
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // In a real app, this would save the form data
-    setShowForm(false);
+
+  const handleFormSubmit = async (formData: FormData) => {
+    try {
+      let keptImageUrls: string[] = [];
+      const keptImagesJson = formData.get('keptImageUrls') as string;
+      if (keptImagesJson) {
+        keptImageUrls = JSON.parse(keptImagesJson);
+        formData.delete('keptImageUrls'); // Remove from formData after parsing
+      }
+
+      let imagesToDelete: string[] = [];
+      const imagesToDeleteJson = formData.get('imagesToDelete') as string;
+      if (imagesToDeleteJson) {
+        imagesToDelete = JSON.parse(imagesToDeleteJson);
+        formData.delete('imagesToDelete'); // Remove from formData
+      }
+
+      let storeAllocations: StoreStock[] = [];
+      const storeAllocationsJson = formData.get('storeAllocations') as string;
+      if (storeAllocationsJson) {
+        storeAllocations = JSON.parse(storeAllocationsJson);
+        formData.delete('storeAllocations'); // Remove from formData
+      }
+
+      if (isEditing && editingProduct) {
+        formData.append('keptImageUrls', JSON.stringify(keptImageUrls));
+        formData.append('imagesToDelete', JSON.stringify(imagesToDelete));
+        formData.append('storeAllocations', JSON.stringify(storeAllocations));
+
+        await axios.put(
+          `${apiUrl}/product/${editingProduct.id}`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${tempToken}`,
+            }
+          }
+        );
+        alert('Product updated');
+
+        if (editingProduct.id && storeAllocations.length > 0) {
+          const adjustmentPromises = storeAllocations.map(async (allocation: StoreStock) => {
+            await axios.post(
+              `${apiUrl}/inventory/stock`,
+              {
+                productId: editingProduct.id,
+                storeId: allocation.storeId,
+                quantity: allocation.quantity,
+                type: allocation.type,
+              },
+              { headers: { Authorization: `Bearer ${tempToken}` } }
+            );
+          });
+          await Promise.all(adjustmentPromises);
+          alert('Stock adjustments applied successfully');
+        }
+
+      } else {
+        if (storeAllocations.length > 0) {
+          formData.append('storeAllocations', JSON.stringify(storeAllocations));
+        }
+        const res = await axios.post(
+          `${apiUrl}/product`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${tempToken}`,
+            }
+          }
+        );
+        alert('Product added');
+
+        const newProductId = (res.data as Product).id;
+        if (newProductId && storeAllocations.length > 0) {
+          const allocationPromises = storeAllocations.map(async (allocation: StoreStock) => {
+            await axios.post(
+              `${apiUrl}/inventory/stock`,
+              {
+                productId: newProductId,
+                storeId: allocation.storeId,
+                quantity: allocation.quantity,
+                type: allocation.type,
+              },
+              { headers: { Authorization: `Bearer ${tempToken}` } }
+            );
+          });
+          await Promise.all(allocationPromises);
+          alert('Initial stock allocated successfully');
+        }
+      }
+
+      setShowProductForm(false);
+      fetchProducts();
+    } catch (err) {
+      alert('Failed to save product');
+      console.error('Save product error:', err);
+    }
   };
+
   const handleFormCancel = () => {
-    setShowForm(false);
+    setShowProductForm(false);
   };
-  return <div className="space-y-6">
+
+  const [products, setProducts] = useState<Product[]>([]);
+
+  const fetchProducts = async () => {
+    try {
+      const res = await axios.get(
+        `${apiUrl}/product`,
+        {
+          headers: {
+            Authorization: `Bearer ${tempToken}`
+          }
+        }
+      );
+      setProducts(res.data as Product[]);
+    } catch (error) {
+      alert('Failed to fetch Products');
+      console.error('Failed to fetch Products:', error);
+      setProducts([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const markets = [{
+    id: 1,
+    name: 'Downtown Grocery'
+  }, {
+    id: 2,
+    name: 'Westside Market'
+  }, {
+    id: 3,
+    name: 'Northside Pantry'
+  }];
+
+  const columns = [
+    {
+      label: "Product",
+      accessor: "name",
+      render: (product: Product) => (
+        <div className="flex items-center">
+          <img
+            src={`${apiUrl}${product.images?.[0]?.imageUrl}`}
+            alt={product.name}
+            className="h-10 w-10 rounded-full object-cover"
+          />
+          <div className="ml-4">
+            <div className="text-sm font-medium text-gray-900">{product.name}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      label: "Category",
+      accessor: "category",
+      render: (product: Product) => product.category?.name || "-"
+    },
+    {
+      label: "Price",
+      accessor: "price",
+      render: (product: Product) => `Rp.${product.basePrice}`,
+    },
+    {
+      label: "Total Stock",
+      accessor: "totalStock",
+      render: (product: Product) => `${product.stocks?.reduce((total, stock) => total + stock.quantity, 0) || 0}`,
+    },
+    {
+      label: "Store Distribution",
+      accessor: "stores",
+      render: (product: Product) => (
+        <div className="space-y-1">
+          {product.stocks?.map((storeStock: StoreStock, idx: number) => {
+            return (
+              <div key={idx} className="flex space-x-2">
+                <span>{storeStock?.store.name}:</span>
+                <span>{storeStock?.quantity}</span>
+              </div>
+            );
+          })}
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div className="text-black space-y-6">
       <div className="md:flex md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">
@@ -39,36 +242,40 @@ export default function InventoryPage() {
           </p>
         </div>
         <div className="mt-4 flex md:mt-0">
-          <button type="button" onClick={handleAddProduct} className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+          <button
+            type="button"
+            onClick={handleAddProduct}
+            className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+          >
             <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
             Add Product
           </button>
         </div>
       </div>
-      {/* Search and Filter Section */}
-      <div className="bg-white p-4 shadow rounded-lg">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div>
-            <label htmlFor="search" className="sr-only">
-              Search products
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <SearchIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
-              </div>
-              <input type="text" name="search" id="search" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="focus:ring-green-500 focus:border-green-500 block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 sm:text-sm" placeholder="Search products" />
-            </div>
-          </div>
-          <div>
-            <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md">
-              <option value="">All Categories</option>
-              {categories.map(category => <option key={category} value={category}>
-                  {category}
-                </option>)}
-            </select>
-          </div>
-        </div>
-      </div>
-      {showForm ? <ProductForm onSubmit={handleFormSubmit} onCancel={handleFormCancel} isEditing={isEditing} /> : <ProductTable onEdit={handleEditProduct} onDelete={handleDeleteProduct} searchQuery={searchQuery} selectedCategory={selectedCategory} />}
-    </div>;
-};
+      {showProductForm ? (
+        <ProductForm
+          onSubmit={handleFormSubmit}
+          onCancel={handleFormCancel}
+          isEditing={isEditing}
+          editingProduct={editingProduct}
+        />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={products}
+          onEdit={handleEditProduct}
+          onDelete={handleDeleteProduct}
+          searchQuery={searchQuery}
+          filterFn={(product, search) => {
+            const matchesSearch =
+              product.name.toLowerCase().includes(search.toLowerCase());
+            const matchesCategory =
+              selectedCategory === "" ||
+              product.category.name === selectedCategory;
+            return matchesSearch && matchesCategory;
+          }}
+        />
+      )}
+    </div>
+  );
+}

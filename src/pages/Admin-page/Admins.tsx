@@ -24,7 +24,7 @@ export default function AdminsPage() {
           'Content-Type': 'application/json',
         },
       });
-      setRefresh(r => !r);
+    fetchAdmins();
     } catch (err) {
       alert(`Fail to delete admin`);
     }
@@ -84,26 +84,26 @@ export default function AdminsPage() {
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [editingAdmin, setEditingAdmin] = useState<Admin | null>(null);
-  const [refresh, setRefresh] = useState(false);
+
+  const fetchAdmins = async () => {
+    try {
+      const res = await axios.get(
+        `${apiUrl}/super-admin/users`,
+        {
+          headers: {
+            Authorization: `Bearer ${tempToken}`,
+          }
+        }
+      );
+      setAdmins(res.data as Admin[]);
+    } catch (error) {
+      setAdmins([]);
+    }
+  };
 
   useEffect(() => {
-    const fetchAdmins = async () => {
-      try {
-        const res = await axios.get(
-          `${apiUrl}/super-admin/users`,
-          {
-            headers: {
-              Authorization: `Bearer ${tempToken}`,
-            }
-          }
-        );
-        setAdmins(res.data as Admin[]);
-      } catch (error) {
-        setAdmins([]);
-      }
-    };
     fetchAdmins();
-  }, [showForm, refresh]);
+  }, [showForm]);
 
   return <div className="space-y-6">
     <div className="md:flex md:items-center md:justify-between">
