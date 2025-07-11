@@ -15,6 +15,15 @@ export interface AuthState {
   error: string | null;
 }
 
+export interface ILogin {
+  email: string;
+  password: string;
+}
+
+export interface IRegisterResponse {
+  message: string;
+}
+
 export interface ILoginResponse {
   message: string;
   token: string;

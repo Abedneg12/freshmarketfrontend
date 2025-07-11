@@ -2,23 +2,21 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { registerUser, clearError } from "@/lib/redux/slice/authSlice";
+import axios from "axios";
 import { AlertCircleIcon, LoaderIcon } from "lucide-react";
+import { IRegisterResponse } from "@/lib/interface/auth";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function RegisterPage() {
-  const dispatch = useAppDispatch();
-  const { isLoading, error } = useAppSelector((state) => state.auth);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     referralCode: "",
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState("");
-
-  useEffect(() => {
-    dispatch(clearError());
-  }, [dispatch]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -27,10 +25,23 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSuccessMessage("");
-    const resultAction = await dispatch(registerUser(formData));
-    if (registerUser.fulfilled.match(resultAction)) {
-      setSuccessMessage(resultAction.payload);
+    setError(null);
+    setIsLoading(true);
+    try {
+      const response = await axios.post<IRegisterResponse>(
+        `${API_URL}/api/auth/register`,
+        formData
+      );
+      setSuccessMessage(response.data.message);
       setFormData({ fullName: "", email: "", referralCode: "" });
+    } catch (error: any) {
+      if (error.isAxiosError && error.response) {
+        setError(error.response.data.error || "Registrasi Gagal.");
+      } else {
+        setError("Terjadi kesalahan. Silahkan coba lagi.");
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 

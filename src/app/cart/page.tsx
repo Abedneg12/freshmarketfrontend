@@ -1,9 +1,9 @@
-import { Cart } from "@/pages/cart-page";
+import CartPage from "@/pages/cart-page";
 
-export default function CartPage() {
+export default function Cart() {
   return (
     <div>
-        <Cart />
+        <CartPage />
     </div>
   );
 }

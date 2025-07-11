@@ -15,11 +15,15 @@ const initialState: StoreState = {
 
 export const fetchRecommendations = createAsyncThunk(
   "store/fetchRecommendations",
-  async ({ lat, lng }: { lat: number; lng: number }, thunkAPI) => {
+  async (location: { lat: number; lng: number } | undefined, thunkAPI) => {
     try {
-      const response = await axios.get<StoreRecommendation[]>(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/stores/recommendations?lat=${lat}&lng=${lng}`
-      );
+      let url = `${process.env.NEXT_PUBLIC_API_URL}/stores/recommendations`;
+
+      if (location?.lat && location?.lng) {
+        url += `?lat=${location.lat}&lng=${location.lng}`;
+      }
+
+      const response = await axios.get<StoreRecommendation[]>(url);
       return response.data as StoreRecommendation[];
     } catch (error: any) {
       return thunkAPI.rejectWithValue(
