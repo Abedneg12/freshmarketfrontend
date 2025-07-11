@@ -5,7 +5,7 @@ import { Menu, Bell, Settings, LogOut } from 'lucide-react';
 
 // 1. Impor komponen Sidebar yang sudah kita buat
 //    Pastikan path ini sesuai dengan lokasi file Sidebar.tsx Anda
-import AdminSidebar from '@/app/components/storead/sidebar'; 
+import AdminSidebar from '@/components/storead/sidebar'; 
 
 export default function StoreAdminLayout({
   children,
