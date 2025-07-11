@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { LayoutDashboardIcon, StoreIcon, UsersIcon, BarChart3Icon, LogOutIcon, PackageIcon, PercentCircleIcon, Layers } from 'lucide-react';
+import { LayoutDashboardIcon, StoreIcon, UsersIcon, BarChart3Icon, LogOutIcon, PackageIcon, PercentCircleIcon, Layers, User, UserIcon } from 'lucide-react';
 
 interface SidebarProps {
   showMenu: boolean;
@@ -18,7 +18,8 @@ export default function Sidebar({ showMenu, setShowMenu }: SidebarProps) {
     { name: 'Discount', icon: PercentCircleIcon, id: 'discount', path: '/discount' },
     { name: 'Category', icon: Layers, id: 'category', path: '/category' },
     { name: 'Admin Accounts', icon: UsersIcon, id: 'admins', path: '/admins' },
-    { name: 'Reports', icon: BarChart3Icon, id: 'reports', path: '/reports' }
+    { name: 'Users Accounts', icon: UserIcon, id: 'users', path: '/users' },
+    { name: 'Reports', icon: BarChart3Icon, id: 'reports', path: '/reports' },
   ];
 
   const handleNavigation = (path: string) => {

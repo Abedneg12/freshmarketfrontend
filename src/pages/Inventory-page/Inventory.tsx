@@ -1,5 +1,3 @@
-// pages/InventoryPage.tsx
-
 import React, { useEffect, useState } from 'react';
 import { ProductForm } from '../../app/components/product/ProductForm';
 import { PlusIcon, SearchIcon } from 'lucide-react';

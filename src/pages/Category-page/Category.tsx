@@ -55,7 +55,7 @@ export default function DiscountPage() {
 
   const columns = [
     { label: 'Name', accessor: 'name' },
-    { label: 'Product', accessor: 'Product', render: (row: any) => Number(row.value)},
+    { label: 'Product', accessor: 'Product', render: (row: Category) => Number(row.products?.length)},
   ];
 
   return <div className=" text-gray-900 space-y-6">
