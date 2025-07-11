@@ -1,26 +1,37 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { requestPasswordReset, clearError } from "@/lib/redux/slice/authSlice";
+import axios from "axios";
+import { IMessageResponse } from "@/lib/interface/auth";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function ForgotPasswordPage() {
-  const dispatch = useAppDispatch();
-  const { isLoading, error } = useAppSelector((state) => state.auth);
   const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState("");
-
-  useEffect(() => {
-    dispatch(clearError());
-  }, [dispatch]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSuccessMessage("");
-    const resultAction = await dispatch(requestPasswordReset({ email }));
-    if (requestPasswordReset.fulfilled.match(resultAction)) {
-      setSuccessMessage(resultAction.payload);
+    setError(null);
+    setIsLoading(true);
+    try {
+      const response = await axios.post<IMessageResponse>(
+        `${API_URL}/api/auth/reset-password`,
+        { email }
+      );
+      setSuccessMessage(response.data.message);
+    } catch (error: any) {
+      if (error.isAxiosError && error.response) {
+        setError(error.response.data.error || "Gagal meminta reset password.");
+      } else {
+        setError("Terjadi kesalahan. Silahkan coba lagi.");
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -61,7 +72,7 @@ export default function ForgotPasswordPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 w-full px-3 py-2 border rounded-lg"
+                className="mt-1 w-full px-3 py-2 border rounded-lg text-black"
               />
             </div>
             <button

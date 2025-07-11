@@ -36,9 +36,11 @@ export default function RootLayout({
     <StoreProvider>
       <html lang="en">
         <body className={`${montserrat.className} antialiased`}>
-          <SuperAdminDashboard>
+          <Navbar />
+          {/* <SuperAdminDashboard> */}
             {children}
-          </SuperAdminDashboard>
+          {/* </SuperAdminDashboard> */}
+          <Footer />
         </body>
       </html>
     </StoreProvider>

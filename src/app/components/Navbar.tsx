@@ -1,19 +1,23 @@
-'use client'
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+"use client";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ShoppingCartIcon,
   UserIcon,
   MenuIcon,
   XIcon,
   SearchIcon,
-} from 'lucide-react';
+} from "lucide-react";
+import Cookies from "js-cookie";
 
 // 1. Impor semua hook dan action yang diperlukan dari Redux
-import { useAppSelector, useAppDispatch } from '@/lib/redux/hooks';
-import { fetchUserProfile, logoutUser } from '@/lib/redux/slice/authSlice';
-import { fetchCartCount, clearCartOnLogout } from '@/lib/redux/slice/cartSlice';
+import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
+import { fetchUserProfile, logoutUser } from "@/lib/redux/slice/authSlice";
+import { fetchCartCount, clearCartOnLogout } from "@/lib/redux/slice/cartSlice";
+
+const defaultAvatarSvg =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a0aec0' stroke-width='1.5'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E";
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -32,7 +36,8 @@ const Navbar: React.FC = () => {
   useEffect(() => {
     // Coba ambil profil jika ada token di local storage
     const token = localStorage.getItem("token");
-    if (token && !user) { // Hanya fetch jika user belum ada di state
+    if (token && !user) {
+      // Hanya fetch jika user belum ada di state
       dispatch(fetchUserProfile());
     }
   }, [dispatch, user]);
@@ -46,17 +51,22 @@ const Navbar: React.FC = () => {
 
   // 4. Buat fungsi logout yang bersih
   const handleLogout = () => {
-    dispatch(logoutUser());      // Membersihkan state auth
+    dispatch(logoutUser()); // Membersihkan state auth
     dispatch(clearCartOnLogout()); // Membersihkan state cart
+    Cookies.remove("auth_token"); // Hapus token dari cookie
     setIsProfileDropdownOpen(false); // Tutup dropdown
-    router.push('/');
+    router.push("/");
   };
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="text-green-600 font-bold text-2xl" onClick={() => setIsMenuOpen(false)}>
+        <Link
+          href="/"
+          className="text-green-600 font-bold text-2xl"
+          onClick={() => setIsMenuOpen(false)}
+        >
           FreshMart
         </Link>
 
@@ -68,7 +78,10 @@ const Navbar: React.FC = () => {
           <Link href="/catalog" className="text-gray-700 hover:text-green-600">
             Categories
           </Link>
-          <Link href="/catalog?deals=true" className="text-gray-700 hover:text-green-600">
+          <Link
+            href="/catalog?deals=true"
+            className="text-gray-700 hover:text-green-600"
+          >
             Deals
           </Link>
         </nav>
@@ -88,9 +101,13 @@ const Navbar: React.FC = () => {
           <div className="relative">
             {isAuthenticated && user ? (
               <>
-                <button onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}>
+                <button
+                  onClick={() =>
+                    setIsProfileDropdownOpen(!isProfileDropdownOpen)
+                  }
+                >
                   <img
-                    src={user.profilePicture || '/default-avatar.png'}
+                    src={user.profilePicture || defaultAvatarSvg}
                     alt={user.fullName}
                     className="h-8 w-8 rounded-full border-2 border-green-500 object-cover"
                   />
@@ -98,13 +115,23 @@ const Navbar: React.FC = () => {
                 {isProfileDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-md z-50">
                     <div className="px-4 py-2 border-b">
-                      <p className="font-semibold text-sm text-black">{user.fullName}</p>
+                      <p className="font-semibold text-sm text-black">
+                        {user.fullName}
+                      </p>
                       <p className="text-xs text-gray-500">{user.email}</p>
                     </div>
-                    <Link href="/profile" onClick={() => setIsProfileDropdownOpen(false)} className="block px-4 py-2 text-sm hover:bg-gray-100 text-black">
+                    <Link
+                      href="/profile"
+                      onClick={() => setIsProfileDropdownOpen(false)}
+                      className="block px-4 py-2 text-sm hover:bg-gray-100 text-black"
+                    >
                       Your Profile
                     </Link>
-                    <Link href="/orders" onClick={() => setIsProfileDropdownOpen(false)} className="block px-4 py-2 text-sm hover:bg-gray-100 text-black">
+                    <Link
+                      href="/orders"
+                      onClick={() => setIsProfileDropdownOpen(false)}
+                      className="block px-4 py-2 text-sm hover:bg-gray-100 text-black"
+                    >
                       Order History
                     </Link>
                     <button
@@ -124,7 +151,10 @@ const Navbar: React.FC = () => {
           </div>
 
           {/* Cart Section (Dinamis) */}
-          <Link href="/cart" className="relative text-gray-700 hover:text-green-600">
+          <Link
+            href="/cart"
+            className="relative text-gray-700 hover:text-green-600"
+          >
             <ShoppingCartIcon className="h-6 w-6" />
             {isAuthenticated && totalQuantity > 0 && (
               <span className="absolute -top-2 -right-2 bg-green-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
@@ -135,8 +165,15 @@ const Navbar: React.FC = () => {
         </div>
 
         {/* Mobile Menu Button */}
-        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden text-gray-700">
-          {isMenuOpen ? <XIcon className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
+        <button
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="md:hidden text-gray-700"
+        >
+          {isMenuOpen ? (
+            <XIcon className="h-6 w-6" />
+          ) : (
+            <MenuIcon className="h-6 w-6" />
+          )}
         </button>
       </div>
 
@@ -151,10 +188,45 @@ const Navbar: React.FC = () => {
             />
             <SearchIcon className="absolute left-4 top-2.5 h-4 w-4 text-gray-400" />
           </div>
-          <Link href="/" onClick={() => setIsMenuOpen(false)} className="block text-gray-700">Home</Link>
-          <Link href="/catalog" onClick={() => setIsMenuOpen(false)} className="block text-gray-700">Categories</Link>
-          <Link href="/catalog?deals=true" onClick={() => setIsMenuOpen(false)} className="block text-gray-700">Deals</Link>
-          <Link href="/orders" onClick={() => setIsMenuOpen(false)} className="block text-gray-700">Orders</Link>
+          <Link
+            href="/"
+            onClick={() => setIsMenuOpen(false)}
+            className="block text-gray-700"
+          >
+            Home
+          </Link>
+          <Link
+            href="/catalog"
+            onClick={() => setIsMenuOpen(false)}
+            className="block text-gray-700"
+          >
+            Categories
+          </Link>
+          <Link
+            href="/catalog?deals=true"
+            onClick={() => setIsMenuOpen(false)}
+            className="block text-gray-700"
+          >
+            Deals
+          </Link>
+          {isAuthenticated && (
+            <>
+              <Link
+                href={"/profile"}
+                onClick={() => setIsMenuOpen(false)}
+                className="block text-gray-700"
+              >
+                Profile
+              </Link>
+              <Link
+                href="/orders"
+                onClick={() => setIsMenuOpen(false)}
+                className="block text-gray-700"
+              >
+                Orders
+              </Link>
+            </>
+          )}
           <div className="border-t pt-3">
             {isAuthenticated ? (
               <button
