@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import React from "react";
 import { IAddress } from "@/lib/interface/address";
 import { Edit, Trash2 } from "lucide-react";

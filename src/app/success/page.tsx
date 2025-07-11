@@ -1,10 +1,10 @@
-import VerifyPage from "@/pages/auth/verify-page";
+import SuccessPage from "@/pages/auth/success-page";
 import { Suspense } from "react";
 
-export default function verify() {
+export default function AuthSuccess() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <VerifyPage />
+      <SuccessPage />
     </Suspense>
   );
 }

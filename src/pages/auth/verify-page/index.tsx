@@ -1,49 +1,61 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { verifyUser, clearError } from "@/lib/redux/slice/authSlice";
 import Link from "next/link";
+import axios from "axios";
+import { IMessageResponse } from "@/lib/interface/auth";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function VerifyPage() {
   const router = useRouter();
-  const dispatch = useAppDispatch();
   const searchParams = useSearchParams();
-  const { isLoading, error } = useAppSelector((state) => state.auth);
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [localError, setLocalError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
   const token = searchParams?.get("token");
 
   useEffect(() => {
-    dispatch(clearError());
     if (!token) {
-      setLocalError("Token verifikasi tidak ditemukan atau tidak valid.");
+      setError("Token verifikasi tidak ditemukan atau tidak valid.");
     }
-  }, [token, dispatch]);
+  }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLocalError("");
+    setError("");
     if (password.length < 6) {
-      setLocalError("Password minimal 6 karakter.");
+      setError("Password minimal 6 karakter.");
       return;
     }
     if (password !== confirmPassword) {
-      setLocalError("Password tidak cocok.");
+      setError("Password tidak cocok.");
       return;
     }
     if (token) {
-      const resultAction = await dispatch(verifyUser({ token, password }));
-      if (verifyUser.fulfilled.match(resultAction)) {
+      setIsLoading(true);
+      try {
+        const response = await axios.post<IMessageResponse>(
+          `${API_URL}/api/auth/verify-email`,
+          { token, password }
+        );
         setSuccessMessage(
-          `${resultAction.payload}. Anda akan diarahkan ke halaman login...`
+          `${response.data.message}. Anda akan diarahkan ke halaman Login...`
         );
         setTimeout(() => router.push("/login"), 3000);
+      } catch (error: any) {
+        if (error.isAxiosError && error.response) {
+          setError(error.response.data.error || "Verifikasi gagal.");
+        } else {
+          setError("Terjadi kesalahan. Silahkan coba lagi.");
+        }
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -55,11 +67,6 @@ export default function VerifyPage() {
           Verifikasi Akun & Atur Password
         </h2>
 
-        {localError && (
-          <div className="mb-4 bg-red-100 text-red-700 p-3 rounded">
-            {localError}
-          </div>
-        )}
         {error && (
           <div className="mb-4 bg-red-100 text-red-700 p-3 rounded">
             {error}
@@ -74,24 +81,26 @@ export default function VerifyPage() {
         {token && !successMessage && (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium">Password Baru</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full mt-1 border p-2 rounded-md"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium">
-                Konfirmasi Password Baru
+              <label className="block text-sm font-medium text-black">
+                Password Baru
               </label>
               <input
                 type="password"
                 value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full mt-1 border p-2 rounded-md text-black"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-black">
+                Konfirmasi Password Baru
+              </label>
+              <input
+                type="password"
+                value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full mt-1 border p-2 rounded-md"
+                className="w-full mt-1 border p-2 rounded-md text-black"
                 required
               />
             </div>
