@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { ProductForm } from '../../app/components/product/ProductForm';
+import { ProductForm } from '../../components/product/ProductForm';
 import { PlusIcon, SearchIcon } from 'lucide-react';
-import { DataTable } from '@/app/components/common/DataTable';
+import { DataTable } from '@/components/common/DataTable';
 import { apiUrl, tempToken } from '../config';
 import { Product, StoreStock } from '../../lib/interface/product.type';
 import axios from 'axios';

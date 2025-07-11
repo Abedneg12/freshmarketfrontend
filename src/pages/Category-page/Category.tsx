@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { CategoryForm } from '@/app/components/category/CategoryForm';
+import { CategoryForm } from '@/components/category/CategoryForm';
 import { PlusIcon, SearchIcon } from 'lucide-react';
 import { apiUrl, tempToken } from '../config';
-import { DataTable } from '@/app/components/common/DataTable';
+import { DataTable } from '@/components/common/DataTable';
 import { Category } from '@/lib/interface/category.type';
 import axios from 'axios';
 

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { DiscountForm } from '../../app/components/discount/DiscountForm';
+import { DiscountForm } from '../../components/discount/DiscountForm';
 import { PlusIcon, SearchIcon } from 'lucide-react';
 import { apiUrl, tempToken } from '../config';
-import { DataTable } from '@/app/components/common/DataTable';
+import { DataTable } from '@/components/common/DataTable';
 import axios from 'axios';
 
 export default function DiscountPage() {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { PlusIcon, SearchIcon } from 'lucide-react';
 import { apiUrl, tempToken } from '../config';
 import axios from 'axios';
-import { DataTable } from '@/app/components/common/DataTable';
+import { DataTable } from '@/components/common/DataTable';
 import { Market } from '@/lib/interface/market';
 
 // Define the Admin and AdminStoreAssignment interfaces
