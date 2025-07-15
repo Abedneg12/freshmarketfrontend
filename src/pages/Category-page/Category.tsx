@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { CategoryForm } from '@/app/components/category/CategoryForm';
+import { CategoryForm } from '@/components/category/CategoryForm';
 import { PlusIcon, SearchIcon } from 'lucide-react';
 import { apiUrl, tempToken } from '../config';
-import { DataTable } from '@/app/components/common/DataTable';
+import { DataTable } from '@/components/common/DataTable';
 import { Category } from '@/lib/interface/category.type';
 import axios from 'axios';
 
@@ -55,7 +55,7 @@ export default function DiscountPage() {
 
   const columns = [
     { label: 'Name', accessor: 'name' },
-    { label: 'Product', accessor: 'Product', render: (row: any) => Number(row.value)},
+    { label: 'Product', accessor: 'Product', render: (row: Category) => Number(row.products?.length)},
   ];
 
   return <div className=" text-gray-900 space-y-6">

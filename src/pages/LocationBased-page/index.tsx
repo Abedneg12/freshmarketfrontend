@@ -88,7 +88,7 @@ export const LocationBased = () => {
               >
                 <div className="relative w-full h-48">
                   <Image
-                    src={store.imageUrl}
+                    src={store.imageUrl ? store.imageUrl : "/placeholder.png"}
                     alt={store.name}
                     fill
                     className="object-cover"

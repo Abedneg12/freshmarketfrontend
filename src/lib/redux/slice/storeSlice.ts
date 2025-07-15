@@ -1,9 +1,9 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
-import { StoreRecommendation } from "@/lib/interface/market";
+import { Market, StoreRecommendation } from "@/lib/interface/market";
 
 interface StoreState {
-  data: StoreRecommendation[];
+  data: Market[];
   loading: boolean;
   error?: string;
 }
@@ -23,8 +23,23 @@ export const fetchRecommendations = createAsyncThunk(
         url += `?lat=${location.lat}&lng=${location.lng}`;
       }
 
-      const response = await axios.get<StoreRecommendation[]>(url);
-      return response.data as StoreRecommendation[];
+      const response = await axios.get<Market[]>(url);
+      return response.data as Market[];
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.error || "Gagal mengambil data toko"
+      );
+    }
+  }
+);
+
+export const fetchStore = createAsyncThunk(
+  "stores/all",
+  async (_, thunkAPI) => {
+    try {
+      let url = `${process.env.NEXT_PUBLIC_API_URL}/stores/all`;
+      const response = await axios.get<Market[]>(url);
+      return response.data as Market[];
     } catch (error: any) {
       return thunkAPI.rejectWithValue(
         error.response?.data?.error || "Gagal mengambil data toko"
@@ -51,6 +66,21 @@ const storeSlice = createSlice({
         }
       )
       .addCase(fetchRecommendations.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(fetchStore.pending, (state) => {
+        state.loading = true;
+        state.error = undefined;
+      })
+      .addCase(
+        fetchStore.fulfilled,
+        (state, action: PayloadAction<StoreState["data"]>) => {
+          state.data = action.payload;
+          state.loading = false;
+        }
+      )
+      .addCase(fetchStore.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });
