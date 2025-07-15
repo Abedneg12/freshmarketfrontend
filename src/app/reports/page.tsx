@@ -1,10 +1,9 @@
 'use client';
 import ReportsPage from "@/pages/Reports-page/Reports";
+import withSuperAdminAuth from '@/components/common/SuperAdminAuth';
 
-export default function page() {
-  return (
-    <div>
-        <ReportsPage/>
-    </div>
-  );
-}
+const Page = () => {
+  return <ReportsPage />;
+};
+
+export default withSuperAdminAuth(Page);

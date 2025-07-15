@@ -1,31 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { PlusIcon, SearchIcon } from 'lucide-react';
-import { apiUrl, tempToken } from '../config';
+import { apiUrl } from '../config';
 import axios from 'axios';
 import { DataTable } from '@/components/common/DataTable';
 import { Market } from '@/lib/interface/market';
-
-// Define the Admin and AdminStoreAssignment interfaces
-interface AdminStoreAssignment {
-  id: number;
-  storeId: number;
-  userId: number;
-  store: {
-    id: number;
-    name: string;
-  };
-}
-
-interface Admin {
-  id: number;
-  fullName: string;
-  email: string;
-  role: string;
-  isVerified: boolean;
-  StoreAdminAssignment: AdminStoreAssignment[];
-}
+import { useAppSelector } from '@/lib/redux/hooks';
+import { Admin, StoreAdminAssignment } from '@/lib/interface/admins.type';
 
 export default function AdminsPage() {
+  const { token } = useAppSelector((state) => state.auth);
   const [showForm, setShowForm] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<Admin | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,7 +26,8 @@ export default function AdminsPage() {
       setFullName(editingAdmin.fullName);
       setEmail(editingAdmin.email);
       setPassword('');
-      setSelectedStoreIds(editingAdmin.StoreAdminAssignment.map(assignment => assignment.storeId));
+      setSelectedStoreIds(editingAdmin.StoreAdminAssignment.map(a => Number(a.storeId)));
+
     } else {
       setFullName('');
       setEmail('');
@@ -69,7 +53,7 @@ export default function AdminsPage() {
     try {
       await axios.delete(`${apiUrl}/super-admin/store-admins/${adminId}`, {
         headers: {
-          Authorization: `Bearer ${tempToken}`,
+          Authorization: `Bearer ${token}`,
         },
       });
       alert(`Admin ${adminId} deleted successfully.`);
@@ -94,7 +78,7 @@ export default function AdminsPage() {
       if (editingAdmin) {
         await axios.put(`${apiUrl}/super-admin/store-admins/${editingAdmin.id}`, dataToSend, {
           headers: {
-            Authorization: `Bearer ${tempToken}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
@@ -106,7 +90,7 @@ export default function AdminsPage() {
         }
         await axios.post(`${apiUrl}/super-admin/store-admins`, dataToSend, {
           headers: {
-            Authorization: `Bearer ${tempToken}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
@@ -129,7 +113,7 @@ export default function AdminsPage() {
       accessor: 'StoreAdminAssignment',
       render: (admin: Admin) =>
         admin.StoreAdminAssignment && admin.StoreAdminAssignment.length > 0
-          ? admin.StoreAdminAssignment.map((assignment: AdminStoreAssignment) => assignment.store.name).join(', ')
+          ? admin.StoreAdminAssignment.map((assignment: StoreAdminAssignment) => assignment.store.name).join(', ')
           : 'N/A'
     },
     {
@@ -148,7 +132,7 @@ export default function AdminsPage() {
         `${apiUrl}/super-admin/users`,
         {
           headers: {
-            Authorization: `Bearer ${tempToken}`,
+            Authorization: `Bearer ${token}`,
           }
         }
       );
@@ -165,7 +149,7 @@ export default function AdminsPage() {
         `${apiUrl}/stores/all`,
         {
           headers: {
-            Authorization: `Bearer ${tempToken}`,
+            Authorization: `Bearer ${token}`,
           }
         }
       );

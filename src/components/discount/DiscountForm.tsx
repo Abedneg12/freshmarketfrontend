@@ -1,41 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { apiUrl, tempToken } from '@/pages/config';
+import { apiUrl} from '@/pages/config';
 import { useRouter } from 'next/navigation';
 import { Market } from '@/lib/interface/market';
-
-// Assuming Market interface is already defined in '@/lib/interface/market'
-// interface Market {
-//   id: number;
-//   name: string;
-//   // ... other properties
-// }
+import { Discount } from '@/lib/interface/discount.type';
+import { useAppSelector } from '@/lib/redux/hooks';
 
 // Define a minimal Product interface for the dropdown
 interface Product {
   id: number;
   name: string;
-  // ... other properties you might need for display
 }
 
-// Define the shape of the discount being edited (if any)
-interface EditingDiscount {
-  id?: number;
-  discountType: string; // e.g., 'PERCENTAGE', 'BUY1GET1', 'VOUCHER'
-  storeId?: number;
-  productId?: number;
-  value: string;
-  startDate: string;
-  endDate: string;
-  minPurchase?: number;
-  maxDiscount?: number;
-  // Add other properties if your discount object has them
-}
-
-const apiBaseUrl = apiUrl;
-
-export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCancel: () => void; isEditing: boolean; editingDiscount?: EditingDiscount | null }) => {
+export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCancel: () => void; isEditing: boolean; editingDiscount?: Discount | null }) => {
   const router = useRouter();
+  const { token } = useAppSelector((state) => state.auth);
 
   // Form states
   const [discountType, setDiscountType] = useState('PERCENTAGE');
@@ -60,8 +39,8 @@ export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCance
       setDataError(null);
       try {
         const [storesRes, productsRes] = await Promise.all([
-          axios.get(`${apiBaseUrl}/stores/all`, { headers: { Authorization: `Bearer ${tempToken}` } }),
-          axios.get(`${apiBaseUrl}/product`, { headers: { Authorization: `Bearer ${tempToken}` } }),
+          axios.get(`${apiUrl}/stores/all`, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${apiUrl}/product`, { headers: { Authorization: `Bearer ${token}` } }),
         ]);
         setStores(storesRes.data as Market[]);
         setProducts(productsRes.data as Product[]);
@@ -78,7 +57,9 @@ export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCance
   // Effect to populate form when in editing mode
   useEffect(() => {
     if (isEditing && editingDiscount) {
-      setDiscountType(editingDiscount.discountType || 'PERCENTAGE');
+      console.log('Editing discount:', editingDiscount);
+      setDiscountType(editingDiscount.type || 'PERCENTAGE');
+      console.log(`discount type :`, editingDiscount.type );
       setSelectedStoreId(editingDiscount.storeId || '');
       setSelectedValue(editingDiscount.value || '');
       setSelectedProductId(editingDiscount.productId || '');
@@ -88,7 +69,7 @@ export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCance
       setEndDate(editingDiscount.endDate ? new Date(editingDiscount.endDate).toISOString().split('T')[0] : '');
     } else {
       // Reset form for adding new discount
-      setDiscountType('PERCENTAGE');
+      //setDiscountType('PERCENTAGE');
       setSelectedStoreId('');
       setSelectedValue('');
       setSelectedProductId('');
@@ -97,7 +78,7 @@ export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCance
       setStartDate('');
       setEndDate('');
     }
-  }, [isEditing, editingDiscount, stores, products]); // Add stores, products to dependencies to ensure they are loaded before pre-filling
+  }, [isEditing]); 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,13 +92,13 @@ export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCance
     };
 
     if (discountType === 'BUY1GET1') {
-      Url = `${apiBaseUrl}/discount/bogo`;
+      Url = `${apiUrl}/discount/bogo`;
       payload = { ...payload, productId: Number(selectedProductId) };
     } else if (discountType === 'PERCENTAGE') {
-      Url = `${apiBaseUrl}/discount/product`;
+      Url = `${apiUrl}/discount/product`;
       payload = { ...payload, productId: Number(selectedProductId) };
-    } else if (discountType === 'VOUCHER') {
-      Url = `${apiBaseUrl}/discount/voucher`;
+    } else if (discountType === 'NOMINAL') {
+      Url = `${apiUrl}/discount/voucher`;
       payload = {
         ...payload,
         minPurchase: Number(minPurchase),
@@ -129,7 +110,7 @@ export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCance
       if (isEditing && editingDiscount?.id) {
         await axios.put(`${Url}/${editingDiscount.id}`, payload, {
           headers: {
-            Authorization: `Bearer ${tempToken}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
@@ -137,13 +118,13 @@ export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCance
       } else {
         await axios.post(Url, payload, {
           headers: {
-            Authorization: `Bearer ${tempToken}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
         alert('Discount created!');
       }
-      onCancel(); // Close form or navigate back
+      onCancel();
     } catch (err: any) {
       console.error('Failed to save discount:', err);
       alert(`Failed to save discount: ${err.response?.data?.message || err.message}`);
@@ -177,9 +158,9 @@ export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCance
               onChange={e => setDiscountType(e.target.value)}
               className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
             >
-              <option value="PERCENTAGE">Percentage</option>
+              <option value="PERCENTAGE">Product</option>
               <option value="BUY1GET1">Buy 1 Get 1</option>
-              <option value="VOUCHER">Voucher</option>
+              <option value="NOMINAL">Voucher</option>
             </select>
           </div>
           {/* Store Select */}
@@ -239,7 +220,7 @@ export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCance
             </div>
           )}
           {/* Voucher fields */}
-          {discountType === 'VOUCHER' && (
+          {discountType === 'NOMINAL' && (
             <>
               <div>
                 <label htmlFor="minPurchase" className="block text-sm font-medium text-black">

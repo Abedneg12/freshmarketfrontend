@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { GiHamburgerMenu } from 'react-icons/gi';
+import Link from 'next/link';
 import { FaCompass, FaUser } from 'react-icons/fa';
 
 interface NavbarProps {
@@ -33,14 +34,14 @@ export default function Navbar({ showMenu, setShowMenu }: NavbarProps) {
               <FaCompass className="h-6 w-6" />
             </button>
             <div className="ml-3 relative">
-              <div className="flex items-center">
+              <Link href="/profile" className="flex items-center">
                 <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center text-white">
                   <FaUser className="h-5 w-5" />
                 </div>
                 <span className="hidden md:inline-block ml-2 text-sm font-medium text-gray-700">
                   Admin User
                 </span>
-              </div>
+              </Link>
             </div>
           </div>
         </div>

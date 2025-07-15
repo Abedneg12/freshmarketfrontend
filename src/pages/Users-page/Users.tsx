@@ -1,52 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { PlusIcon, SearchIcon } from 'lucide-react';
-import { apiUrl, tempToken } from '../config';
+import { SearchIcon } from 'lucide-react';
+import { apiUrl } from '../config';
 import axios from 'axios';
 import { DataTable } from '@/components/common/DataTable';
 import { Market } from '@/lib/interface/market';
-
-// Define the Admin and AdminStoreAssignment interfaces
-interface AdminStoreAssignment {
-  id: number;
-  storeId: number;
-  userId: number;
-  store: {
-    id: number;
-    name: string;
-  };
-}
-
-interface Admin {
-  id: number;
-  fullName: string;
-  email: string;
-  role: string;
-  isVerified: boolean;
-  StoreAdminAssignment: AdminStoreAssignment[];
-}
+import { useAppSelector } from '@/lib/redux/hooks';
+import { Admin } from '@/lib/interface/admins.type';
 
 export default function UsersPage() {
+  const { token } = useAppSelector((state) => state.auth);
   const [searchQuery, setSearchQuery] = useState('');
-
   const [admins, setAdmins] = useState<Admin[]>([]);
-
-  const handleDeleteAdmin = async (adminId: string | number) => {
-    if (!window.confirm(`Are you sure you want to delete admin with ID: ${adminId}?`)) {
-      return;
-    }
-    try {
-      await axios.delete(`${apiUrl}/super-admin/store-admins/${adminId}`, {
-        headers: {
-          Authorization: `Bearer ${tempToken}`,
-        },
-      });
-      alert(`Admin ${adminId} deleted successfully.`);
-      fetchAdmins();
-    } catch (err: any) {
-      console.error('Failed to delete admin:', err);
-      alert(`Failed to delete admin: ${err.response?.data?.message || err.message}`);
-    }
-  };
 
   const columns = [
     { label: 'Name', accessor: 'fullName' },
@@ -67,7 +31,7 @@ export default function UsersPage() {
         `${apiUrl}/super-admin/users`,
         {
           headers: {
-            Authorization: `Bearer ${tempToken}`,
+            Authorization: `Bearer ${token}`,
           }
         }
       );

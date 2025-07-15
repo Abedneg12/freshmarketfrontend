@@ -5,6 +5,7 @@ export interface IUser {
   profilePicture?: string;
   referralCode?: string;
   isVerified: boolean;
+  role: string;
 }
 
 export interface AuthState {

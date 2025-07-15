@@ -1,9 +1,10 @@
 'use client';
-import AdminsPage from '@/pages/Admin-page/Admins';
-import React from 'react'
 
-export default function page() {
-  return (
-    <AdminsPage />
-  )
-}
+import Admins from '@/pages/Admin-page/Admins';
+import withSuperAdminAuth from '@/components/common/SuperAdminAuth';
+
+const Page = () => {
+  return <Admins />;
+};
+
+export default withSuperAdminAuth(Page);

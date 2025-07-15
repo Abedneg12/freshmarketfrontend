@@ -2,8 +2,8 @@
 "use client";
 
 import React, { useState } from "react";
-import Navbar from "@/pages/SuperAdmin-page/components/navbar";
-import Sidebar from "@/pages/SuperAdmin-page/components/Sidebar";
+import Navbar from "@/components/layout/SuperAdmin/Navbar";
+import Sidebar from "@/components/layout/SuperAdmin/Sidebar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [showMenu, setShowMenu] = useState(false);

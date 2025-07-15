@@ -1,54 +1,71 @@
 import React, { useEffect, useState } from 'react';
 import { DiscountForm } from '../../components/discount/DiscountForm';
 import { PlusIcon, SearchIcon } from 'lucide-react';
-import { apiUrl, tempToken } from '../config';
+import { apiUrl} from '../config';
 import { DataTable } from '@/components/common/DataTable';
 import axios from 'axios';
+import { Discount } from '@/lib/interface/discount.type';
+import { useAppSelector } from '@/lib/redux/hooks';
 
 export default function DiscountPage() {
+  const { token } = useAppSelector((state) => state.auth);
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingDiscount, setEditingDiscount] = useState<Discount | null>(null);
+
   const handleAddDiscount = () => {
     setIsEditing(false);
     setShowForm(true);
   };
   const handleEditDiscount = (Discount: any) => {
     setIsEditing(true);
+    setEditingDiscount(Discount);
     setShowForm(true);
   };
-  const handleDeleteDiscount = (DiscountId: string | number) => {
-    alert(`Discount ${DiscountId} would be deleted`);
+  const handleDeleteDiscount = async (discountId: string | number) => {
+    const confirmDelete = confirm(`Are you sure you want to delete discount ${discountId}?`);
+    if (!confirmDelete) return;
+
+    try {
+      await axios.delete(`${apiUrl}/discount/${discountId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setDiscounts(prev => prev.filter(d => d.id !== discountId));
+      alert(`Discount ${discountId} deleted successfully.`);
+      fetchDiscounts();
+    } catch (error) {
+      console.error('Failed to delete discount:', error);
+      alert(`Failed to delete discount ${discountId}.`);
+    }
   };
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setShowForm(false);
-  };
+
   const handleFormCancel = () => {
     setShowForm(false);
   };
 
   const [discount, setDiscounts] = useState<Discount[]>([]);
 
-  useEffect(() => {
-    const fetchDiscounts = async () => {
-      try {
-        const res = await axios.get(
-          `${apiUrl}/discount`,
-          {
-            headers: {
-              Authorization: `Bearer ${tempToken}`
-            }
+  const fetchDiscounts = async () => {
+    try {
+      const res = await axios.get(
+        `${apiUrl}/discount`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
           }
-        );
-        setDiscounts(res.data as Discount[]);
-      } catch (error) {
-        alert('Failed to fetch discounts');
-        console.error('Failed to fetch discounts:', error);
-        setDiscounts([]);
-      }
-    };
-
+        }
+      );
+      setDiscounts(res.data as Discount[]);
+    } catch (error) {
+      alert('Failed to fetch discounts');
+      console.error('Failed to fetch discounts:', error);
+      setDiscounts([]);
+    }
+  };
+  useEffect(() => {
     fetchDiscounts();
   }, []);
 
@@ -76,7 +93,7 @@ export default function DiscountPage() {
         </button>
       </div>
     </div>
-    {showForm ? <DiscountForm onCancel={handleFormCancel} isEditing={isEditing} /> :
+    {showForm ? <DiscountForm onCancel={handleFormCancel} isEditing={isEditing} editingDiscount={editingDiscount} /> :
       <>
         <div>
           <label htmlFor="search" className="sr-only">

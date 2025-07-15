@@ -2,6 +2,8 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { LayoutDashboardIcon, StoreIcon, UsersIcon, BarChart3Icon, LogOutIcon, PackageIcon, PercentCircleIcon, Layers, User, UserIcon, NotebookPenIcon } from 'lucide-react';
+import { logoutUser } from '@/lib/redux/slice/authSlice';
+import { useAppDispatch } from '@/lib/redux/hooks';
 
 interface SidebarProps {
   showMenu: boolean;
@@ -10,6 +12,7 @@ interface SidebarProps {
 
 export default function Sidebar({ showMenu, setShowMenu }: SidebarProps) {
   const router = useRouter();
+  const dispatch = useAppDispatch();
 
   const navigation = [
     { name: 'Dashboard', icon: LayoutDashboardIcon, id: 'dashboard', path: '/dashboard' },
@@ -21,12 +24,18 @@ export default function Sidebar({ showMenu, setShowMenu }: SidebarProps) {
     { name: 'Admin Accounts', icon: UsersIcon, id: 'admins', path: '/admins' },
     { name: 'Users Accounts', icon: UserIcon, id: 'users', path: '/users' },
     { name: 'Reports', icon: BarChart3Icon, id: 'reports', path: '/reports' },
-    
+
   ];
 
   const handleNavigation = (path: string) => {
     setShowMenu(false); // Hide sidebar on mobile after navigation
     router.push(path);
+  };
+
+  // 4. Buat fungsi logout yang bersih
+  const handleLogout = () => {
+    dispatch(logoutUser());
+    router.push('/');
   };
 
   return (
@@ -61,8 +70,10 @@ export default function Sidebar({ showMenu, setShowMenu }: SidebarProps) {
         </nav>
       </div>
       <div className="px-2 mt-6">
-        <button className="w-full flex items-center px-2 py-2 text-base md:text-sm font-medium rounded-md text-green-100 hover:bg-green-600">
-          <LogOutIcon className="mr-3 flex-shrink-0 h-6 w-6 text-green-300" />
+        <button
+          onClick={handleLogout}
+          className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-full text-sm"
+        >
           Sign Out
         </button>
       </div>

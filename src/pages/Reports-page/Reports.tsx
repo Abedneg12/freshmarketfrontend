@@ -1,10 +1,9 @@
-// Reports.tsx
-
 import React, { useEffect, useState } from 'react';
 import { ReportFilters } from '../Dashboard-page/components/ReportFilters'; // Adjust path if needed
 import { ReportChart } from '../Dashboard-page/components/ReportChart'; // Adjust path if needed
 import axios from 'axios';
-import { apiUrl, tempToken } from '../config'; // Assuming config is in the parent directory
+import { apiUrl} from '../config'; // Assuming config is in the parent directory
+import { useAppSelector } from '@/lib/redux/hooks';
 
 // Define interfaces for the report data structures from your backend
 interface MonthlyReportDataItem {
@@ -36,6 +35,7 @@ interface MonthlySalesByProductReport {
 }
 
 export default function ReportsPage() {
+  const { token } = useAppSelector((state) => state.auth);
   const [selectedFilters, setSelectedFilters] = useState({
     year: new Date().getFullYear(), // Default to current year
     storeId: undefined as number | undefined, // Default to all stores
@@ -53,7 +53,6 @@ export default function ReportsPage() {
     setSelectedFilters(prev => ({
       ...prev,
       ...filters,
-      // Ensure storeId is undefined if not selected or invalid
       storeId: filters.storeId === null || filters.storeId === undefined ? undefined : filters.storeId,
     }));
   };
@@ -65,7 +64,7 @@ export default function ReportsPage() {
       const { year, storeId } = selectedFilters;
 
       const headers = {
-        Authorization: `Bearer ${tempToken}`,
+        Authorization: `Bearer ${token}`,
       };
 
       const params = {

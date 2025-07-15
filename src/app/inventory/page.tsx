@@ -1,9 +1,10 @@
 'use client';
+import withSuperAdminAuth from '@/components/common/SuperAdminAuth';
 import InventoryPage from '@/pages/Inventory-page/Inventory'
 import React from 'react'
 
-export default function page() {
-  return (
-    <InventoryPage />
-  )
-}
+const Page = () => {
+  return <InventoryPage />;
+};
+
+export default withSuperAdminAuth(Page);

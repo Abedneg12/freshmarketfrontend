@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { ProductForm } from '../../components/product/ProductForm';
 import { PlusIcon, SearchIcon } from 'lucide-react';
 import { DataTable } from '@/components/common/DataTable';
-import { apiUrl, tempToken } from '../config';
+import { apiUrl} from '../config';
 import { Product, StoreStock } from '../../lib/interface/product.type';
 import axios from 'axios';
 import { Category } from '@/lib/interface/category.type';
+import { useAppSelector } from '@/lib/redux/hooks';
 
 export default function InventoryPage() {
+  const { token } = useAppSelector((state) => state.auth);
   const [showProductForm, setShowProductForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -31,7 +33,7 @@ export default function InventoryPage() {
     try {
       await axios.delete(`${apiUrl}/product/${productId}`, {
         headers: {
-          Authorization: `Bearer ${tempToken}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -67,19 +69,19 @@ export default function InventoryPage() {
       if (isEditing && editingProduct) {
         formData.append('keptImageUrls', JSON.stringify(keptImageUrls));
         formData.append('imagesToDelete', JSON.stringify(imagesToDelete));
-        formData.append('storeAllocations', JSON.stringify(storeAllocations));
 
         await axios.put(
           `${apiUrl}/product/${editingProduct.id}`,
           formData,
           {
             headers: {
-              Authorization: `Bearer ${tempToken}`,
+              Authorization: `Bearer ${token}`,
             }
           }
         );
         alert('Product updated');
 
+        formData.append('storeAllocations', JSON.stringify(storeAllocations));
         if (editingProduct.id && storeAllocations.length > 0) {
           const adjustmentPromises = storeAllocations.map(async (allocation: StoreStock) => {
             await axios.post(
@@ -90,7 +92,7 @@ export default function InventoryPage() {
                 quantity: allocation.quantity,
                 type: allocation.type,
               },
-              { headers: { Authorization: `Bearer ${tempToken}` } }
+              { headers: { Authorization: `Bearer ${token}` } }
             );
           });
           await Promise.all(adjustmentPromises);
@@ -106,7 +108,7 @@ export default function InventoryPage() {
           formData,
           {
             headers: {
-              Authorization: `Bearer ${tempToken}`,
+              Authorization: `Bearer ${token}`,
             }
           }
         );
@@ -123,7 +125,7 @@ export default function InventoryPage() {
                 quantity: allocation.quantity,
                 type: allocation.type,
               },
-              { headers: { Authorization: `Bearer ${tempToken}` } }
+              { headers: { Authorization: `Bearer ${token}` } }
             );
           });
           await Promise.all(allocationPromises);
@@ -151,7 +153,7 @@ export default function InventoryPage() {
         `${apiUrl}/product`,
         {
           headers: {
-            Authorization: `Bearer ${tempToken}`
+            Authorization: `Bearer ${token}`
           }
         }
       );
@@ -166,17 +168,6 @@ export default function InventoryPage() {
   useEffect(() => {
     fetchProducts();
   }, []);
-
-  const markets = [{
-    id: 1,
-    name: 'Downtown Grocery'
-  }, {
-    id: 2,
-    name: 'Westside Market'
-  }, {
-    id: 3,
-    name: 'Northside Pantry'
-  }];
 
   const columns = [
     {
