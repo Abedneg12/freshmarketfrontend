@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import SuperAdminDashboard from "@/pages/SuperAdmin-page/components/dashbordLayout";
+import Navbar from "@/components/layout/Navbar";
+import SuperAdminDashboard from "@/components/layout/SuperAdmin/Layout";
 import { Montserrat } from "next/font/google";
-import { Footer } from "@/components/Footer";
+import { Footer } from "@/components/layout/Footer";
 import { StoreProvider } from "@/lib/redux/storeProvider";
+import ConditionalLayout from "@/components/layout/ConditionalLayout";
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -36,11 +37,7 @@ export default function RootLayout({
     <StoreProvider>
       <html lang="en">
         <body className={`${montserrat.className} antialiased`}>
-          <Navbar />
-          {/* <SuperAdminDashboard> */}
-            {children}
-          {/* </SuperAdminDashboard> */}
-          <Footer />
+          <ConditionalLayout>{children}</ConditionalLayout>
         </body>
       </html>
     </StoreProvider>

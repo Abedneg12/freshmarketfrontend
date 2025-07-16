@@ -1,10 +1,10 @@
 'use client';
 
-import Admins from '@/pages/Admin-page/Admins';
+import UsersPage from "@/pages/Users-page/Users";
 import withSuperAdminAuth from '@/components/common/SuperAdminAuth';
 
 const Page = () => {
-  return <Admins />;
+  return <UsersPage />;
 };
 
 export default withSuperAdminAuth(Page);

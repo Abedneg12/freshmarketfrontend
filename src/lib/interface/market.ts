@@ -21,6 +21,7 @@ export type Market = {
   address: string;
   latitude: number;
   longitude: number;
+  distanceKm: number;
   imageUrl?: string | null;
   createdAt: string; // ISO date string
   admins?: any[];      // You can define a more specific type for admins if needed

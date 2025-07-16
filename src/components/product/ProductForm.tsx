@@ -1,16 +1,15 @@
-// app/components/product/ProductForm.tsx
-
 import React, { useEffect, useState } from 'react';
 import { XIcon, PlusIcon, ImageIcon, MinusIcon } from 'lucide-react';
 import { Market } from '@/lib/interface/market';
-import { apiUrl, tempToken } from '@/pages/config';
+import { apiUrl } from '@/pages/config';
 import { Category } from '@/lib/interface/category.type';
 import axios from 'axios';
 import { Product, StoreStock } from '@/lib/interface/product.type';
+import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
+import { fetchStore } from '@/lib/redux/slice/storeSlice';
 
-// The onSubmit prop will now receive a FormData object
 interface ProductFormProps {
-  onSubmit: (formData: FormData) => void; // Expect FormData here
+  onSubmit: (formData: FormData) => void;
   onCancel: () => void;
   isEditing: boolean;
   editingProduct?: Product | null;
@@ -22,6 +21,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   isEditing,
   editingProduct,
 }) => {
+  const { token } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
+  const { data: markets, loading: storesLoading } = useAppSelector((state) => state.store);
   const [categories, setCategories] = useState<Category[]>([]);
   const [storeAllocations, setStoreAllocations] = useState<StoreStock[]>([]);
   const [selectedStore, setSelectedStore] = useState('');
@@ -38,17 +40,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
   const [quantity, setQuantity] = useState('');
   const [transactionType, setTransactionType] = useState<'IN' | 'OUT'>('IN');
-
-  const markets = [{
-    id: 1,
-    name: 'Downtown Grocery'
-  }, {
-    id: 2,
-    name: 'Westside Market'
-  }, {
-    id: 3,
-    name: 'Northside Pantry'
-  }];
 
   useEffect(() => {
     if (editingProduct) {
@@ -149,26 +140,18 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     formData.append('basePrice', basePrice);
     formData.append('description', description);
 
-    // Append URLs of images that were ALREADY on the server and are KEPT
     if (existingImageUrls.length > 0) {
       formData.append('keptImageUrls', JSON.stringify(existingImageUrls));
     }
-
-    // Append URLs of images that were on the server and are marked for DELETION
     if (imagesToDelete.length > 0) {
       formData.append('imagesToDelete', JSON.stringify(imagesToDelete));
     }
-
-    // Append new image File objects using the key 'images' to match Multer config
     newImageFiles.forEach((file) => {
       formData.append(`images`, file); // Use 'images' as the key
     });
-
-    // Append store allocations as a JSON string
     if (storeAllocations.length > 0) {
       formData.append('storeAllocations', JSON.stringify(storeAllocations));
     }
-
     onSubmit(formData); // Pass the FormData object to the parent
   };
 
@@ -179,7 +162,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           `${apiUrl}/category`,
           {
             headers: {
-              Authorization: `Bearer ${tempToken}`
+              Authorization: `Bearer ${token}`
             }
           }
         );
@@ -190,8 +173,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         setCategories([]);
       }
     };
-    fetchCategories();
-  }, []);
+    fetchCategories
+    dispatch(fetchStore());
+  }, [dispatch]);
 
   return (
     <div className="bg-white shadow overflow-hidden sm:rounded-lg">

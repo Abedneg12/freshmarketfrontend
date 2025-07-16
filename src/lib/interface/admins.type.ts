@@ -1,13 +1,18 @@
-interface Admin {
+export interface Admin {
   id: string;
   fullName: string;
   email: string;
   role: string;
-  StoreAdminAssignment: Store[];
+  StoreAdminAssignment: StoreAdminAssignment[];
   isVerified: boolean;
   addresses: string[];
 }
-interface Store {
+export interface Store {
   id: string;
   name: string;
+}
+
+export interface StoreAdminAssignment{
+  storeId: string;
+  store : Store;
 }
