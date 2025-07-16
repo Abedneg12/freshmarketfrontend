@@ -31,7 +31,7 @@ export const loginUser = createAsyncThunk<ILoginResponse, ILogin>(
       if (typeof window !== "undefined") {
         localStorage.setItem("token", response.data.token);
         Cookies.set("auth_token", response.data.token, {
-          expires: 1,
+          expiresin: "7d",
           path: "/",
         });
       }
