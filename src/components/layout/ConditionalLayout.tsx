@@ -18,7 +18,7 @@ export default function ConditionalLayout({
 }) {
   const { user, isAuthenticated, token } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
-
+  console.log('User:', user);
   useEffect(() => {
     if (localStorage.getItem('token') && !isAuthenticated) {
       dispatch(fetchUserProfile());

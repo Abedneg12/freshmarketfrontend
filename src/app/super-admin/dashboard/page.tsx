@@ -1,9 +1,9 @@
 'use client';
-import CategoryPage from '@/pages/Category-page/Category';
+import DashboardPage from '@/pages/Dashboard-page';
 import React from 'react'
 
 export default function page() {
   return (
-    <CategoryPage />
+    <DashboardPage />
   )
 }

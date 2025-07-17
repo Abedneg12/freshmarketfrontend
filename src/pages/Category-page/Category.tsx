@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { CategoryForm } from '@/components/category/CategoryForm';
 import { PlusIcon, SearchIcon } from 'lucide-react';
-import { apiUrl, tempToken } from '../config';
+import { apiUrl } from '../config';
 import { DataTable } from '@/components/common/DataTable';
 import { Category } from '@/lib/interface/category.type';
 import axios from 'axios';
+import { useAppSelector } from '@/lib/redux/hooks';
 
 export default function DiscountPage() {
+  const { token } = useAppSelector((state) => state.auth);
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -38,7 +40,7 @@ export default function DiscountPage() {
           `${apiUrl}/Category`,
           {
             headers: {
-              Authorization: `Bearer ${tempToken}`
+              Authorization: `Bearer ${token}`
             }
           }
         );
