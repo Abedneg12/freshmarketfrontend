@@ -8,6 +8,8 @@ import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { useAppDispatch } from '@/lib/redux/hooks';
 import { fetchUserProfile } from '@/lib/redux/slice/authSlice';
+import StoreAdminLayout from './StoreAdmin/Layout';
+
 
 export default function ConditionalLayout({
   children,
@@ -25,7 +27,10 @@ export default function ConditionalLayout({
 
   if (isAuthenticated && user?.role === 'SUPER_ADMIN') {
     return <SuperAdminDashboard>{children}</SuperAdminDashboard>;
-  } else {
+  } else if (isAuthenticated && user?.role === 'STORE_ADMIN') {
+    return <StoreAdminLayout>{children}</StoreAdminLayout>;
+  } 
+  else {
     console.log(user);
     return <><Navbar />{children}<Footer /></>;
   }
