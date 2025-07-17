@@ -23,9 +23,18 @@ export interface Product {
   name: string;
   description: string;
   basePrice: number;
+  price: number;
   category: ProductCategory;
   categoryId: number;
   createdAt: string; // ISO date string
   images?: ProductImage[];
   stocks?: StoreStock[];
+}
+
+export interface storeProduct {
+  id: number;
+  address: string;
+  imageUrl: string;
+  name: string;
+  products: Product[];
 }

@@ -26,6 +26,7 @@ export default function AddressManagement() {
     dispatch(fetchAddresses());
   }, [dispatch]);
 
+  console.log('Addresses:', addresses);
   const handleOpenForm = (address: IAddress | null) => {
     setEditingAddress(address);
     setIsFormOpen(true);

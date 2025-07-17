@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { apiUrl, tempToken } from '@/pages/config';
+import { apiUrl} from '@/pages/config';
+import { useAppSelector } from '@/lib/redux/hooks';
 
 export const CategoryForm = ({
   onCancel,
@@ -13,6 +14,7 @@ export const CategoryForm = ({
   editingCategory?: { id: number; name: string };
   onSuccess?: () => void;
 }) => {
+  const { token } = useAppSelector((state) => state.auth);
   const [name, setName] = useState(editingCategory?.name || '');
   const [loading, setLoading] = useState(false);
 
@@ -27,7 +29,7 @@ export const CategoryForm = ({
           { name },
           {
             headers: {
-              Authorization: `Bearer ${tempToken}`,
+              Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
           }
@@ -39,7 +41,7 @@ export const CategoryForm = ({
           { name },
           {
             headers: {
-              Authorization: `Bearer ${tempToken}`,
+              Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
           }

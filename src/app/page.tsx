@@ -1,13 +1,13 @@
 "use client";
 import { Hero } from "@/pages/Hero-page";
-import { BestSellers } from "@/pages/BestSellers-page";
+import { ProductNearestShop } from "@/pages/ProductNearestShop-page";
 import { Discounts } from "@/pages/Discounts-page";
 import { LocationBased } from "@/pages/LocationBased-page";
 
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 
-import { fetchRecommendations } from "@/lib/redux/slice/storeSlice";
+import { fetchRecommendations } from "@/lib/redux/slice/nearestStoreSlice";
 import { setLocationSuccess, setLocationError } from "@/lib/redux/slice/locationSlice";
 
 export default function Home () {
@@ -36,8 +36,7 @@ export default function Home () {
   return (
     <>
       <Hero />
-      <BestSellers />
-      <Discounts />
+      <ProductNearestShop />
       <LocationBased />
     </>
   );

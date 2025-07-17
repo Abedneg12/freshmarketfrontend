@@ -1,11 +1,14 @@
 import { configureStore } from "@reduxjs/toolkit";
-import storeReducer from "./slice/storeSlice";
+import storeReducer from "./slice/nearestStoreSlice";
 import locationReducer from "./slice/locationSlice";
 import authReducer from "./slice/authSlice";
 import cartReducer from "./slice/cartSlice";
 import addressReducer from "./slice/addressSlice";
 import orderReducer from "./slice/orderSlice";
 import adminStoreReducer from "./slice/adminStoreSlice";
+import productReducer from "./slice/orderSlice";
+import storeProductReducer from "./slice/storeProductSlice";
+
 
 export const store = configureStore({
   reducer: {
@@ -16,6 +19,8 @@ export const store = configureStore({
     address: addressReducer,
     order: orderReducer,
     adminStores: adminStoreReducer,
+    product: productReducer,
+    storeProduct: storeProductReducer,
   },
 });
 

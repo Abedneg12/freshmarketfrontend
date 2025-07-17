@@ -3,11 +3,13 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import { fetchCartItems } from '@/lib/redux/slice/cartSlice';
+// [FIXED] Mengimpor dari addressSlice, bukan authSlice
 import { fetchAddresses } from '@/lib/redux/slice/addressSlice';
 import { createOrder, resetOrderStatus } from '@/lib/redux/slice/orderSlice';
 import { CreditCardIcon, TruckIcon } from 'lucide-react';
 
-const CheckoutPage = () => {
+// Menggunakan 'export default function' sesuai standar Next.js App Router
+export default function CheckoutPage() {
     const router = useRouter();
     const dispatch = useAppDispatch();
 
@@ -17,12 +19,14 @@ const CheckoutPage = () => {
 
     // Ambil data yang relevan dari Redux store
     const { carts } = useAppSelector((state) => state.cart);
+    // [FIXED] Mengambil 'addresses' dari state.address
     const { addresses } = useAppSelector((state) => state.address);
     const { status: orderStatus, error: orderError } = useAppSelector((state) => state.order);
 
     // Ambil data awal (keranjang & alamat) saat komponen dimuat
     useEffect(() => {
         dispatch(fetchCartItems());
+        // [FIXED] Memanggil action fetchAddresses yang benar
         dispatch(fetchAddresses());
         // Selalu reset status order sebelumnya saat masuk halaman checkout
         dispatch(resetOrderStatus());
@@ -31,7 +35,7 @@ const CheckoutPage = () => {
     // Secara otomatis pilih alamat utama sebagai default saat data alamat tersedia
     useEffect(() => {
         if (addresses && addresses.length > 0) {
-            const mainAddress = addresses.find((addr: { id: number; isMain: boolean }) => addr.isMain);
+            const mainAddress = addresses.find(addr => addr.isMain);
             setSelectedAddressId(mainAddress ? mainAddress.id : addresses[0].id);
         }
     }, [addresses]);
@@ -82,9 +86,8 @@ const CheckoutPage = () => {
                 <h1 className="text-3xl font-bold text-gray-800 mb-8">Checkout</h1>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     
-                    {/* Kolom Kiri: Pilihan Alamat & Pembayaran */}
                     <div className="lg:col-span-2 space-y-8">
-                        {/* Bagian Pilihan Alamat */}
+                        {/* Pilihan Alamat */}
                         <div className="bg-white p-6 rounded-lg shadow-sm">
                             <h2 className="text-xl font-semibold mb-4 text-gray-800">Shipping Address</h2>
                             <div className="space-y-4">
@@ -104,10 +107,9 @@ const CheckoutPage = () => {
                                     </div>
                                 ))}
                             </div>
-                            {/* Di sini bisa ditambahkan tombol untuk 'Tambah Alamat Baru' */}
                         </div>
 
-                        {/* Bagian Pilihan Pembayaran */}
+                        {/* Pilihan Pembayaran */}
                         <div className="bg-white p-6 rounded-lg shadow-sm">
                             <h2 className="text-xl font-semibold mb-4 text-gray-800">Payment Method</h2>
                             <div className="space-y-4">
@@ -129,7 +131,7 @@ const CheckoutPage = () => {
                         </div>
                     </div>
 
-                    {/* Kolom Kanan: Ringkasan Pesanan */}
+                    {/* Ringkasan Pesanan */}
                     <div className="lg:col-span-1">
                         <div className="bg-white p-6 rounded-lg shadow-sm sticky top-28">
                             <h2 className="text-xl font-semibold mb-4 text-gray-800">Order Summary</h2>
@@ -171,6 +173,4 @@ const CheckoutPage = () => {
             </div>
         </div>
     );
-};
-
-export default CheckoutPage;
+}
