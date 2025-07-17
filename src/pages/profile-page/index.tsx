@@ -1,17 +1,35 @@
 "use client";
 
-import React, { useState } from "react";
-import { useAppSelector } from "@/lib/redux/hooks";
+import React, { useState, useEffect } from "react";
+import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
 import { LoaderIcon, User, Shield, MapPinIcon } from "lucide-react";
 import PersonalInformation from "./components/personal-information";
 import Security from "./components/security";
 import AddressManagement from "./components/address.management";
+import { useRouter } from "next/navigation";
+import { isAuthenticated } from "@/utils/auth"; // 1. Impor utilitas isAuthenticated
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("personal");
-  const { user, isLoading } = useAppSelector((state) => state.auth);
+  const router = useRouter();
 
-  if (isLoading || !user) {
+  // PENJELASAN: Kita sekarang mengambil 'user' dan 'isLogin' dari state Redux.
+  // 'isLogin' akan menjadi 'true' setelah sesi dipulihkan.
+  const { user, isLogin } = useAppSelector((state) => state.auth);
+
+  // PENJELASAN: useEffect ini sekarang bertindak sebagai "penjaga" untuk halaman ini.
+  // Ini adalah pengganti dari middleware untuk halaman profil.
+  useEffect(() => {
+    // Jika setelah pengecekan, pengguna ternyata tidak terautentikasi,
+    // arahkan mereka ke halaman login.
+    if (!isAuthenticated()) {
+      router.replace("/login?redirect_url=/profile");
+    }
+  }, [router]);
+
+  // PENJELASAN: Tampilkan loading spinner jika state Redux belum siap
+  // atau jika pengguna belum terautentikasi. Ini mencegah "kedipan" UI.
+  if (!isLogin || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoaderIcon className="h-8 w-8 animate-spin text-green-600" />

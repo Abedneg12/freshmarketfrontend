@@ -8,14 +8,6 @@ export interface IUser {
   role: string;
 }
 
-export interface AuthState {
-  user: IUser | null;
-  token: string | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: string | null;
-}
-
 export interface ILogin {
   email: string;
   password: string;

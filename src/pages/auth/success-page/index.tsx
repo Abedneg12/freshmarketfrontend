@@ -3,7 +3,8 @@
 import React, { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAppDispatch } from "@/lib/redux/hooks";
-import { setToken, fetchUserProfile } from "@/lib/redux/slice/authSlice";
+import { loginAction } from "@/lib/redux/slice/authSlice";
+import { getUserFromToken } from "@/utils/auth";
 import { LoaderIcon } from "lucide-react";
 
 export default function SuccessPage() {
@@ -15,9 +16,16 @@ export default function SuccessPage() {
     const tokenFromUrl = searchParams?.get("token");
 
     if (tokenFromUrl) {
-      dispatch(setToken(tokenFromUrl));
-      dispatch(fetchUserProfile());
-      router.push("/profile");
+      localStorage.setItem("token", tokenFromUrl);
+
+      const user = getUserFromToken();
+
+      if (user) {
+        dispatch(loginAction({ user, token: tokenFromUrl }));
+        router.push("/");
+      } else {
+        router.push("/login?error=oauth_failed");
+      }
     } else {
       router.push("/login?error=oauth_failed");
     }
