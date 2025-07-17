@@ -2,22 +2,25 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
 import { Market } from "@/lib/interface/market";
 
-interface StoreState {
+interface NearestStoreState {
   data: Market[];
   loading: boolean;
   error?: string;
 }
 
-const initialState: StoreState = {
+const initialState: NearestStoreState = {
   data: [],
   loading: false,
 };
 
-export const fetchStore = createAsyncThunk(
-  "stores/all",
-  async (_, thunkAPI) => {
+export const fetchRecommendations = createAsyncThunk(
+  "store/fetchRecommendations",
+  async (location: { lat: number; lng: number } | undefined, thunkAPI) => {
     try {
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/stores/all`;
+      let url = `${process.env.NEXT_PUBLIC_API_URL}/stores/recommendations`;
+      if (location?.lat && location?.lng) {
+        url += `?lat=${location.lat}&lng=${location.lng}`;
+      }
       const response = await axios.get<Market[]>(url);
       return response.data as Market[];
     } catch (error: any) {
@@ -28,28 +31,28 @@ export const fetchStore = createAsyncThunk(
   }
 );
 
-const storeSlice = createSlice({
-  name: "store",
+const nearestStoreSlice = createSlice({
+  name: "nearestStore",
   initialState,
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchStore.pending, (state) => {
+      .addCase(fetchRecommendations.pending, (state) => {
         state.loading = true;
         state.error = undefined;
       })
       .addCase(
-        fetchStore.fulfilled,
-        (state, action: PayloadAction<StoreState["data"]>) => {
+        fetchRecommendations.fulfilled,
+        (state, action: PayloadAction<NearestStoreState["data"]>) => {
           state.data = action.payload;
           state.loading = false;
         }
       )
-      .addCase(fetchStore.rejected, (state, action) => {
+      .addCase(fetchRecommendations.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });
   },
 });
 
-export default storeSlice.reducer;
+export default nearestStoreSlice.reducer;

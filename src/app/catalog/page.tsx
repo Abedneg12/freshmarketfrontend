@@ -1,9 +1,9 @@
 'use client';
-import DiscountPage from '@/pages/Discount-page/Discount';
+import CatalogPage from '@/pages/Catalog-page/Catalog';
 import React from 'react'
 
 export default function page() {
   return (
-    <DiscountPage />
+    <CatalogPage />
   )
 }

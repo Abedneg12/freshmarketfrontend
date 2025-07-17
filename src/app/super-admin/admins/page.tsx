@@ -1,6 +1,5 @@
 'use client';
-
-import Admins from '@/pages/Admin-page/Admins';
+import Admins from '@/pages/Admin-page';
 import withSuperAdminAuth from '@/components/common/SuperAdminAuth';
 
 const Page = () => {
