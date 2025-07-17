@@ -1,100 +1,80 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { loginUser, clearError } from "@/lib/redux/slice/authSlice";
-import { AlertCircleIcon, LoaderIcon } from "lucide-react";
+import { loginAction } from "@/lib/redux/slice/authSlice";
+import { getUserFromToken } from "@/utils/auth";
 import axios from "axios";
-import { IMessageResponse } from "@/lib/interface/auth";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { ILoginResponse } from "@/lib/interface/auth";
+import { LoaderIcon, AlertCircleIcon } from "lucide-react";
+import { apiUrl } from "../config";
 
 export default function LoginPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { isLoading, error, isAuthenticated } = useAppSelector(
-    (state) => state.auth
-  );
+  const searchParams = useSearchParams();
 
-  const [formData, setFormData] = useState({ email: "", password: "" });
-  const [resendSuccessMessage, setResendSuccessMessage] = useState("");
-  const [resendError, setResendError] = useState<string | null>(null);
-  const [isResending, setIsResending] = useState(false);
+  const { isLogin } = useAppSelector((state) => state.auth);
 
-  useEffect(() => {
-    dispatch(clearError());
-  }, [dispatch]);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      const redirectUrl = sessionStorage.getItem("redirectUrl");
-      sessionStorage.removeItem("redirectUrl");
-      router.push(redirectUrl || "/profile");
+    if (isLogin) {
+      const redirectUrl = searchParams?.get("redirect_url");
+      router.push(redirectUrl || "/");
     }
-  }, [isAuthenticated, router]);
+  }, [isLogin, router, searchParams]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setResendSuccessMessage("");
-    setResendError(null);
-    dispatch(loginUser(formData));
-  };
+    setError(null);
+    setIsLoading(true);
 
-  const handleResendVerification = async () => {
-    if (formData.email) {
-      setIsResending(true);
-      setResendError(null);
-      setResendSuccessMessage("");
-      try {
-        const response = await axios.post<IMessageResponse>(
-          `${API_URL}/auth/resend-verification`,
-          { email: formData.email }
-        );
-        setResendSuccessMessage(response.data.message);
-      } catch (error: any) {
-        if (error.isAxiosError(error) && error.response) {
-          setResendError(
-            error.response.data.error || "Gagal mengirim ulang email."
-          );
-        } else {
-          setResendError("Terjadi kesalahan. Silahkan coba lagi.");
-        }
-      } finally {
-        setIsResending(false);
-      }
-    } else {
-      setResendError(
-        "Silahkan masukkan alamat email Anda di form terlebih dahulu."
+    try {
+      const response = await axios.post<ILoginResponse>(
+        `${apiUrl}/api/auth/login`,
+        { email, password }
       );
+      const { token } = response.data;
+
+      localStorage.setItem("token", token);
+      const user = getUserFromToken();
+
+      if (user) {
+        dispatch(loginAction({ user, token }));
+      } else {
+        throw new Error("Gagal memvalidasi token setelah login.");
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Email atau password salah.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="text-center">
-          <Link href="/" className="text-green-600 font-bold text-3xl">
-            FreshMart
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
+        <Link href="/" className="text-green-600 font-bold text-3xl">
+          FreshMart
+        </Link>
+        <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+          Masuk ke Akun Anda
+        </h2>
+        <p className="mt-2 text-sm text-gray-600">
+          Atau{" "}
+          <Link
+            href="/register"
+            className="font-medium text-green-600 hover:text-green-500"
+          >
+            buat akun baru
           </Link>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            Masuk ke Akun Anda
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Atau{" "}
-            <Link
-              href="/register"
-              className="font-medium text-green-600 hover:text-green-500"
-            >
-              buat akun baru
-            </Link>
-          </p>
-        </div>
+        </p>
       </div>
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
@@ -104,53 +84,31 @@ export default function LoginPage() {
               {error}
             </div>
           )}
-          {resendError && (
-            <div className="mb-4 bg-red-50 p-4 rounded-md text-red-700 flex items-center">
-              <AlertCircleIcon className="h-5 w-5 mr-2" />
-              {resendError}
-            </div>
-          )}
-          {resendSuccessMessage && (
-            <div className="mb-4 bg-green-50 p-4 rounded-md text-green-700">
-              {resendSuccessMessage}
-            </div>
-          )}
-
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label className="block text-sm font-medium text-gray-700">
                 Alamat Email
               </label>
               <div className="mt-1">
                 <input
-                  id="email"
-                  name="email"
                   type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
-                  value={formData.email}
-                  onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
                 />
               </div>
             </div>
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label className="block text-sm font-medium text-gray-700">
                 Password
               </label>
               <div className="mt-1">
                 <input
-                  id="password"
-                  name="password"
                   type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
-                  value={formData.password}
-                  onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
                 />
               </div>
@@ -180,18 +138,6 @@ export default function LoginPage() {
             </div>
           </form>
 
-          {error?.includes("verifikasi") && (
-            <div className="text-center mt-4">
-              <button
-                onClick={handleResendVerification}
-                disabled={isResending}
-                className="text-sm font-medium text-green-600 hover:underline disabled:opacity-50"
-              >
-                {isResending ? "Mengirim..." : "Kirim ulang email verifikasi?"}
-              </button>
-            </div>
-          )}
-
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -206,7 +152,7 @@ export default function LoginPage() {
             <div className="mt-6">
               <button
                 onClick={() =>
-                  (window.location.href = `${API_URL}/api/oauth/google`)
+                  (window.location.href = `${apiUrl}/api/oauth/google`)
                 }
                 className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
               >

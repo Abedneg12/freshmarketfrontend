@@ -22,9 +22,9 @@ export default function AddressManagement() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<IAddress | null>(null);
 
-  // useEffect(() => {
-  //   dispatch(fetchAddresses());
-  // }, [dispatch]);
+  useEffect(() => {
+    dispatch(fetchAddresses());
+  }, [dispatch]);
 
   const handleOpenForm = (address: IAddress | null) => {
     setEditingAddress(address);
