@@ -32,13 +32,7 @@ export const getUserFromToken = (): IUser | null => {
   try {
     const decoded: DecodedToken = jwtDecode(token);
     if (decoded.exp * 1000 > Date.now()) {
-      return {
-        id: decoded.id,
-        fullName: decoded.fullName,
-        email: decoded.email,
-        role: decoded.role,
-        isVerified: decoded.isVerified,
-      };
+      return decoded as IUser;
     }
     return null;
   } catch (error) {

@@ -2,7 +2,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { LayoutDashboardIcon, StoreIcon, UsersIcon, BarChart3Icon, LogOutIcon, PackageIcon, PercentCircleIcon, Layers, User, UserIcon, NotebookPenIcon } from 'lucide-react';
-import { logoutUser } from '@/lib/redux/slice/authSlice';
+import { logoutAction } from '@/lib/redux/slice/authSlice';
 import { useAppDispatch } from '@/lib/redux/hooks';
 
 interface SidebarProps {
@@ -34,7 +34,7 @@ export default function Sidebar({ showMenu, setShowMenu }: SidebarProps) {
 
   // 4. Buat fungsi logout yang bersih
   const handleLogout = () => {
-    dispatch(logoutUser());
+    dispatch(logoutAction());
     router.push('/');
   };
 

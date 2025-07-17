@@ -12,7 +12,8 @@ import {
 
 // 1. Impor semua hook dan action yang diperlukan dari Redux
 import { useAppSelector, useAppDispatch } from '@/lib/redux/hooks';
-import { fetchUserProfile, logoutUser } from '@/lib/redux/slice/authSlice';
+import { fetchProfile } from '@/lib/redux/slice/profileSlice';
+import { logoutAction } from '@/lib/redux/slice/authSlice';
 import { fetchCartCount, clearCartOnLogout } from '@/lib/redux/slice/cartSlice';
 
 const Navbar: React.FC = () => {
@@ -33,7 +34,7 @@ const Navbar: React.FC = () => {
     // Coba ambil profil jika ada token di local storage
     const token = localStorage.getItem("token");
     if (token && !user) { // Hanya fetch jika user belum ada di state
-      dispatch(fetchUserProfile());
+      dispatch(fetchProfile());
     }
   }, [dispatch, user]);
 
@@ -46,7 +47,7 @@ const Navbar: React.FC = () => {
 
   // 4. Buat fungsi logout yang bersih
   const handleLogout = () => {
-    dispatch(logoutUser());      // Membersihkan state auth
+    dispatch(logoutAction());      // Membersihkan state auth
     dispatch(clearCartOnLogout()); // Membersihkan state cart
     setIsProfileDropdownOpen(false); // Tutup dropdown
     router.push('/');
@@ -90,16 +91,16 @@ const Navbar: React.FC = () => {
               <>
                 <button onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}>
                   <img
-                    src={user.profilePicture || '/default-avatar.png'}
-                    alt={user.fullName}
+                    src={user.data?.profilePicture || '/default-avatar.png'}
+                    alt={user.data?.fullName || 'User Avatar'}
                     className="h-8 w-8 rounded-full border-2 border-green-500 object-cover"
                   />
                 </button>
                 {isProfileDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-md z-50">
                     <div className="px-4 py-2 border-b">
-                      <p className="font-semibold text-sm text-black">{user.fullName}</p>
-                      <p className="text-xs text-gray-500">{user.email}</p>
+                      <p className="font-semibold text-sm text-black">{user.data?.fullName}</p>
+                      <p className="text-xs text-gray-500">{user.data?.email}</p>
                     </div>
                     <Link href="/profile" onClick={() => setIsProfileDropdownOpen(false)} className="block px-4 py-2 text-sm hover:bg-gray-100 text-black">
                       Your Profile

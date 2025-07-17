@@ -3,7 +3,7 @@
 import React, { useEffect, type FC, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppSelector, useAppDispatch } from '@/lib/redux/hooks';
-import { fetchUserProfile } from '@/lib/redux/slice/authSlice';
+import { fetchProfile } from '@/lib/redux/slice/profileSlice';
 import { ShoppingCart, Archive, BarChart3, ArrowRight } from 'lucide-react';
 
 // --- Komponen Kecil untuk Kartu Ringkasan ---
@@ -46,42 +46,42 @@ export default function StoreAdminDashboardPage() {
     const dispatch = useAppDispatch();
 
     // --- Pengecekan Otentikasi & Otorisasi ---
-    // useEffect(() => {
-    //     const localToken = localStorage.getItem('token');
-    //     // Jika tidak ada token, langsung redirect ke login
-    //     if (!localToken) {
-    //         // Anda bisa menggunakan toast di sini
-    //         console.error("Redirecting: No token found.");
-    //         router.push('/login');
-    //         return;
-    //     }
-    //     // Jika ada token tapi data user belum ada di Redux, ambil data profil
-    //     if (localToken && !user) {
-    //         dispatch(fetchUserProfile());
-    //     }
-    // }, [dispatch, router, user]);
+    useEffect(() => {
+        const localToken = localStorage.getItem('token');
+        // Jika tidak ada token, langsung redirect ke login
+        if (!localToken) {
+            // Anda bisa menggunakan toast di sini
+            console.error("Redirecting: No token found.");
+            router.push('/login');
+            return;
+        }
+        // Jika ada token tapi data user belum ada di Redux, ambil data profil
+        if (localToken && !user) {
+            dispatch(fetchUserProfile());
+        }
+    }, [dispatch, router, user]);
 
-    // useEffect(() => {
-    //     // Efek ini berjalan setelah data user ada di Redux
-    //     if (isAuthenticated && user) {
-    //         // Jika role tidak sesuai, redirect ke halaman utama
-    //         if (user.role !== 'STORE_ADMIN' && user.role !== 'SUPER_ADMIN') {
-    //             // Anda bisa menggunakan toast di sini
-    //             console.error("Redirecting: Insufficient role.");
-    //             router.push('/'); 
-    //         }
-    //     }
-    // }, [isAuthenticated, user, router]);
+    useEffect(() => {
+        // Efek ini berjalan setelah data user ada di Redux
+        if (isAuthenticated && user) {
+            // Jika role tidak sesuai, redirect ke halaman utama
+            if (user.role !== 'STORE_ADMIN' && user.role !== 'SUPER_ADMIN') {
+                // Anda bisa menggunakan toast di sini
+                console.error("Redirecting: Insufficient role.");
+                router.push('/'); 
+            }
+        }
+    }, [isAuthenticated, user, router]);
 
     // --- Tampilan Loading ---
     // Tampilkan ini saat data user sedang diambil atau sebelum redirect
-    // if (!isAuthenticated || !user) {
-    //     return (
-    //         <div className="flex items-center justify-center h-full w-full">
-    //             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-    //         </div>
-    //     );
-    // }
+    if (!isAuthenticated || !user) {
+        return (
+            <div className="flex items-center justify-center h-full w-full">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+            </div>
+        );
+    }
 
     return (
         <main className="space-y-8">

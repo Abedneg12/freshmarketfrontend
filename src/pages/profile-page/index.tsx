@@ -13,23 +13,23 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("personal");
   const router = useRouter();
 
-  // PENJELASAN: Kita sekarang mengambil 'user' dan 'isLogin' dari state Redux.
-  // 'isLogin' akan menjadi 'true' setelah sesi dipulihkan.
-  const { user, isLogin } = useAppSelector((state) => state.auth);
+  // PENJELASAN: Kita sekarang mengambil 'user' dan 'isAuthenticated' dari state Redux.
+  // 'isAuthenticated' akan menjadi 'true' setelah sesi dipulihkan.
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
 
   // PENJELASAN: useEffect ini sekarang bertindak sebagai "penjaga" untuk halaman ini.
   // Ini adalah pengganti dari middleware untuk halaman profil.
   useEffect(() => {
     // Jika setelah pengecekan, pengguna ternyata tidak terautentikasi,
     // arahkan mereka ke halaman login.
-    if (!isAuthenticated()) {
+    if (!isAuthenticated) {
       router.replace("/login?redirect_url=/profile");
     }
   }, [router]);
 
   // PENJELASAN: Tampilkan loading spinner jika state Redux belum siap
   // atau jika pengguna belum terautentikasi. Ini mencegah "kedipan" UI.
-  if (!isLogin || !user) {
+  if (!isAuthenticated || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoaderIcon className="h-8 w-8 animate-spin text-green-600" />

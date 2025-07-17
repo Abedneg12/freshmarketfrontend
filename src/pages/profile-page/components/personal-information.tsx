@@ -3,12 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import {
-  updateProfileName,
-  updateProfilePicture,
-  clearError,
-  fetchUserProfile,
-} from "@/lib/redux/slice/authSlice";
+import { fetchProfile } from "@/lib/redux/slice/profileSlice";
 import { IMessageResponse, IUser } from "@/lib/interface/auth";
 import { LoaderIcon, UploadCloudIcon } from "lucide-react";
 import axios from "axios";
@@ -28,16 +23,16 @@ export default function PersonalInformation({ user }: Props) {
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: user.fullName,
-    email: user.email,
+    fullName: user.data?.fullName,
+    email: user.data?.email,
   });
   const [successMessage, setSuccessMessage] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setFormData({
-      fullName: user.fullName,
-      email: user.email,
+      fullName: user.data?.fullName,
+      email: user.data?.email,
     });
   }, [user]);
 

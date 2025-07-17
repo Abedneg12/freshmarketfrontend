@@ -16,7 +16,7 @@ export default function LoginPage() {
   const dispatch = useAppDispatch();
   const searchParams = useSearchParams();
 
-  const { isLogin } = useAppSelector((state) => state.auth);
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,11 +24,11 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isLogin) {
+    if (isAuthenticated) {
       const redirectUrl = searchParams?.get("redirect_url");
       router.push(redirectUrl || "/");
     }
-  }, [isLogin, router, searchParams]);
+  }, [isAuthenticated, router, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,13 +1,16 @@
 export interface IUser {
-  id: number;
-  fullName: string;
-  email: string;
-  profilePicture?: string;
-  referralCode?: string;
-  isVerified: boolean;
-  role: string;
+  loading: boolean;
+  data: {
+    id: number;
+    fullName: string;
+    email: string;
+    profilePicture?: string;
+    referralCode?: string;
+    isVerified: boolean;
+    role: "USER" | "SUPER_ADMIN" | "STORE_ADMIN";
+  } | null;
+  error: string | null;
 }
-
 export interface ILogin {
   email: string;
   password: string;
