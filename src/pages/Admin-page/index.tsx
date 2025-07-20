@@ -192,7 +192,7 @@ export default function AdminsPage() {
             <div className="text-black grid grid-cols-1 gap-6 sm:grid-cols-2">
               <div>
                 <label htmlFor="fullName" className="block text-sm font-medium text-black">
-                  Full Name
+                  Full Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   value={fullName}
@@ -200,12 +200,13 @@ export default function AdminsPage() {
                   type="text"
                   name="fullName"
                   id="fullName"
+                  required
                   className="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"
                 />
               </div>
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-black">
-                  Email Address
+                  Email Address <span className="text-red-500">*</span>
                 </label>
                 <input
                   value={email}
@@ -213,13 +214,14 @@ export default function AdminsPage() {
                   type="email"
                   name="email"
                   id="email"
+                  required
                   className="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"
                   readOnly={!!editingAdmin}
                 />
               </div>
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-black">
-                  Password {editingAdmin && '(Leave blank to keep current)'}
+                  Password {editingAdmin ? '(Leave blank to keep current)' : <span className="text-red-500">*</span>}
                 </label>
                 <input
                   value={password}
@@ -227,6 +229,7 @@ export default function AdminsPage() {
                   type="password"
                   name="password"
                   id="password"
+                  {...(!editingAdmin && { required: true })}
                   className="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"
                 />
               </div>

@@ -6,7 +6,7 @@ import { Category } from '@/lib/interface/category.type';
 import axios from 'axios';
 import { Product, StoreStock } from '@/lib/interface/product.type';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
-import { fetchStore } from '@/lib/redux/slice/nearestStoreSlice';
+import { fetchStore } from '@/lib/redux/slice/storeSlice';
 
 interface ProductFormProps {
   onSubmit: (formData: FormData) => void;
@@ -33,7 +33,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   const [description, setDescription] = useState('');
 
   // Image states:
-  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]); // URLs of images already on the server (just the filename/path part)
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]); // URLs of images already on the server 
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]); // Actual File objects for newly added images
   const [previewImageUrls, setPreviewImageUrls] = useState<string[]>([]); // For immediate display (URL.createObjectURL or full existing URLs)
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([]); // URLs of existing images to be removed (just the filename/path part)
@@ -51,7 +51,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       // Initialize existing image URLs and generate previews for them
       const initialExistingImageUrls = editingProduct.images?.map(img => img.imageUrl) || [];
       setExistingImageUrls(initialExistingImageUrls);
-      setPreviewImageUrls(initialExistingImageUrls.map(url => `${apiUrl}${url}`)); // Prepend apiUrl for display
+      setPreviewImageUrls(initialExistingImageUrls.map(url => `${url}`)); // Prepend apiUrl for display
       setNewImageFiles([]); // Clear any new files when switching to edit mode
       setImagesToDelete([]); // Clear deletions when starting a new edit session
       setStoreAllocations([]);
@@ -77,8 +77,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     if (files) {
       const filesArray = Array.from(files);
       setNewImageFiles(prev => [...prev, ...filesArray]);
-
-      // Create object URLs for immediate preview
       const newPreviews = filesArray.map(file => URL.createObjectURL(file));
       setPreviewImageUrls(prev => [...prev, ...newPreviews]);
     }
@@ -89,20 +87,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     const existingImagesCount = existingImageUrls.length;
 
     if (indexToRemove < existingImagesCount) {
-      // It's an existing image, its URL is already in `existingImageUrls`
       const imageUrl = existingImageUrls[indexToRemove];
-
-      // Remove from the list of existing images to keep
       setExistingImageUrls(prev => prev.filter((_, i) => i !== indexToRemove));
-      // Add to the list of images to delete on the server
       setImagesToDelete(prev => [...prev, imageUrl]);
-
-      // Remove from preview, assuming original order for matching
       setPreviewImageUrls(prev => prev.filter((_, i) => i !== indexToRemove));
     } else {
-      // It's a newly added image (File object)
+      // Newly added image (File object)
       const newFileIndex = indexToRemove - existingImagesCount;
-      const fileToRevokeUrl = previewImageUrls[indexToRemove]; // Get the object URL for revocation
+      const fileToRevokeUrl = previewImageUrls[indexToRemove]; 
 
       setNewImageFiles(prev => prev.filter((_, i) => i !== newFileIndex));
       setPreviewImageUrls(prev => prev.filter((_, i) => i !== indexToRemove));

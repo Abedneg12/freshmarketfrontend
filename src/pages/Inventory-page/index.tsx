@@ -176,7 +176,7 @@ export default function InventoryPage() {
       render: (product: Product) => (
         <div className="flex items-center">
           <img
-            src={`${apiUrl}${product.images?.[0]?.imageUrl}`}
+            src={`${product.images?.[0]?.imageUrl}`}
             alt={product.name}
             className="h-10 w-10 rounded-full object-cover"
           />
