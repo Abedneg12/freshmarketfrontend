@@ -5,35 +5,51 @@ import Image from "next/image";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { fetchProfile } from "@/lib/redux/slice/profileSlice";
 import { IMessageResponse, IUser } from "@/lib/interface/auth";
-import { LoaderIcon, UploadCloudIcon } from "lucide-react";
+import {
+  LoaderIcon,
+  UploadCloudIcon,
+  AlertCircleIcon,
+  CopyIcon,
+} from "lucide-react";
 import axios from "axios";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { apiUrl } from "@/pages/config";
 
 const defaultAvatarSvg =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a0aec0' stroke-width='1.5'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E";
 
-interface Props {
-  user: IUser;
+type UserData = IUser["data"];
+
+interface PersonalInformationProps {
+  user: UserData | null;
 }
 
-export default function PersonalInformation({ user }: Props) {
+export default function PersonalInformation({
+  user,
+}: PersonalInformationProps) {
   const dispatch = useAppDispatch();
-  const { isLoading, error } = useAppSelector((state) => state.auth);
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: user.data?.fullName,
-    email: user.data?.email,
+    fullName: user?.fullName || "", // Langsung akses user.fullName
+    email: user?.email || "", // Langsung akses user.email
   });
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(
+    user?.profilePicture || null // Langsung akses user.profilePicture
+  );
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [copySuccess, setCopySuccess] = useState("");
 
   useEffect(() => {
-    setFormData({
-      fullName: user.data?.fullName,
-      email: user.data?.email,
-    });
+    if (user) {
+      setFormData({
+        fullName: user.fullName || "",
+        email: user.email || "",
+      });
+      setPreview(user.profilePicture || null);
+    }
   }, [user]);
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,201 +61,254 @@ export default function PersonalInformation({ user }: Props) {
   ) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setSuccessMessage("");
-      dispatch(clearError());
-      const resultAction = await dispatch(updateProfilePicture(file));
-      if (updateProfilePicture.fulfilled.match(resultAction)) {
-        setSuccessMessage("Foto profil berhasil diperbarui.");
-        dispatch(fetchUserProfile());
+      if (file.size > 1 * 1024 * 1024) {
+        setError("Ukuran file tidak boleh lebih dari 1MB.");
+        return;
       }
+      setError(null);
+      setProfileImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      setIsEditMode(true);
     }
   };
 
   const handleSaveChanges = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     setSuccessMessage("");
-    dispatch(clearError());
+    setIsLoading(true);
 
     let nameUpdateSuccess = false;
     let emailUpdateSuccess = false;
+    let pictureUpdateSuccess = false;
 
-    if (formData.fullName !== user.fullName) {
-      const resultAction = await dispatch(
-        updateProfileName({ fullName: formData.fullName })
-      );
-      if (updateProfileName.fulfilled.match(resultAction)) {
+    // --- PERUBAHAN 2: Akses data langsung ---
+    if (formData.fullName !== user?.fullName) {
+      try {
+        const token = localStorage.getItem("token");
+        await axios.put(
+          `${apiUrl}/api/users/profile`,
+          { fullName: formData.fullName },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         nameUpdateSuccess = true;
+      } catch (err) {
+        /* error handling */
       }
     } else {
       nameUpdateSuccess = true;
     }
 
-    if (formData.email !== user.email) {
+    if (formData.email !== user?.email) {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.post<IMessageResponse>(
-          `${API_URL}/api/user/request-email-update`,
+          `${apiUrl}/api/users/request-email-update`,
           { newEmail: formData.email },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
         setSuccessMessage(response.data.message);
         emailUpdateSuccess = true;
-      } catch (error: any) {
-        dispatch({
-          type: "auth/update/rejected",
-          payload:
-            error.response?.data?.error || "Gagal meminta pembaruan email.",
-        });
+      } catch (err: any) {
+        setError(err.response?.data?.error || "Gagal meminta pembaruan email.");
         emailUpdateSuccess = false;
       }
     } else {
       emailUpdateSuccess = true;
     }
 
-    if (nameUpdateSuccess && emailUpdateSuccess) {
-      await dispatch(fetchUserProfile());
+    if (profileImage) {
+      const imageData = new FormData();
+      imageData.append("file", profileImage);
+      try {
+        const token = localStorage.getItem("token");
+        await axios.put(`${apiUrl}/api/users/profile-picture`, imageData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        });
+        pictureUpdateSuccess = true;
+      } catch (err) {
+        /* error handling */
+      }
+    } else {
+      pictureUpdateSuccess = true;
+    }
 
-      if (formData.email === user.email) {
+    if (nameUpdateSuccess && emailUpdateSuccess && pictureUpdateSuccess) {
+      if (formData.email === user?.email && !successMessage) {
         setSuccessMessage("Perubahan berhasil disimpan.");
       }
+      await dispatch(fetchProfile());
       setIsEditMode(false);
+      setProfileImage(null);
     }
+
+    setIsLoading(false);
   };
 
   const handleCancel = () => {
-    setFormData({ fullName: user.fullName, email: user.email });
+    setFormData({
+      fullName: user?.fullName || "",
+      email: user?.email || "",
+    });
+    setPreview(user?.profilePicture || null);
+    setProfileImage(null);
+    setError(null);
+    setSuccessMessage("");
     setIsEditMode(false);
-    dispatch(clearError());
+  };
+
+  const handleCopyReferral = () => {
+    // --- PERUBAHAN 3: Akses data langsung ---
+    if (user?.referralCode) {
+      navigator.clipboard.writeText(user.referralCode);
+      setCopySuccess("Kode berhasil disalin!");
+      setTimeout(() => setCopySuccess(""), 2000);
+    }
   };
 
   return (
-    <form onSubmit={handleSaveChanges} className="space-y-6">
-      {error && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
-          {error}
-        </div>
-      )}
-      {successMessage && (
-        <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-md">
-          {successMessage}
-        </div>
-      )}
-
-      <div className="flex flex-col items-center">
-        <div
-          className="relative w-24 h-24"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <Image
-            src={user.profilePicture || defaultAvatarSvg}
-            alt={user.fullName || "Default Avatar"}
-            fill
-            sizes="96px"
-            className="rounded-full object-cover border-2 border-green-500 cursor-pointer"
+    <form onSubmit={handleSaveChanges} className="space-y-8">
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          Foto Profil
+        </h3>
+        <div className="flex items-center gap-6">
+          <img
+            src={preview || defaultAvatarSvg}
+            alt="Profile Preview"
+            className="h-20 w-20 rounded-full object-cover border-2 border-gray-200"
           />
+          <div className="flex-1">
+            <label
+              htmlFor="profile-picture-upload"
+              className="cursor-pointer bg-white border border-gray-300 rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center"
+            >
+              <UploadCloudIcon className="h-5 w-5 mr-2" />
+              <span>Ganti Foto</span>
+            </label>
+            <input
+              id="profile-picture-upload"
+              type="file"
+              accept="image/png, image/jpeg, image/gif"
+              className="hidden"
+              onChange={handlePictureChange}
+            />
+            <p className="text-xs text-gray-500 mt-2">
+              JPG, GIF, atau PNG. Ukuran maks 1MB.
+            </p>
+          </div>
         </div>
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handlePictureChange}
-          className="hidden"
-          accept=".jpg, .jpeg, .png, .gif"
-        />
-        <p className="mt-2 text-sm text-gray-500">
-          Click to change profile picture
-        </p>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="space-y-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 border-t pt-8">
+          Informasi Personal
+        </h3>
+        {error && (
+          <div className="bg-red-50 p-3 rounded-md text-red-700 text-sm flex items-center">
+            <AlertCircleIcon className="h-5 w-5 mr-2" /> {error}
+          </div>
+        )}
+        {successMessage && !isEditMode && (
+          <div className="bg-green-50 p-3 rounded-md text-green-700 text-sm">
+            {successMessage}
+          </div>
+        )}
         <div>
-          <label
-            htmlFor="fullName"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Full Name
+          <label className="block text-sm font-medium text-gray-700">
+            Nama Lengkap
           </label>
           <input
             type="text"
-            id="fullName"
             name="fullName"
             value={formData.fullName}
             onChange={handleFormChange}
             readOnly={!isEditMode}
-            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-              !isEditMode
-                ? "bg-gray-100 text-gray-500"
-                : "text-black border-gray-300"
+            className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-black ${
+              !isEditMode ? "bg-gray-100 cursor-not-allowed" : ""
             }`}
+            required
           />
         </div>
         <div>
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Email Address
+          <label className="block text-sm font-medium text-gray-700">
+            Alamat Email
           </label>
           <input
             type="email"
-            id="email"
             name="email"
             value={formData.email}
             onChange={handleFormChange}
             readOnly={!isEditMode}
-            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-              !isEditMode
-                ? "bg-gray-100 text-gray-500"
-                : "text-black border-gray-300"
+            className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-black ${
+              !isEditMode ? "bg-gray-100 cursor-not-allowed" : ""
             }`}
+            required
           />
         </div>
       </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Referral Code
-        </label>
-        <input
-          type="text"
-          value={user.referralCode || "N/A"}
-          readOnly
-          className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
-        />
+      <div className="border-t pt-8">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          Kode Referral Anda
+        </h3>
+        <p className="text-sm text-gray-600 mb-2">
+          Bagikan kode ini ke teman Anda untuk mendapatkan hadiah!
+        </p>
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={user?.referralCode || "N/A"}
+            readOnly
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+          />
+          <button
+            type="button"
+            onClick={handleCopyReferral}
+            className="p-2 bg-gray-200 hover:bg-gray-300 rounded-lg flex-shrink-0"
+            title="Salin kode"
+          >
+            <CopyIcon className="h-5 w-5 text-gray-700" />
+          </button>
+        </div>
+        {copySuccess && (
+          <p className="text-sm text-green-600 mt-2">{copySuccess}</p>
+        )}
       </div>
-
-      <div className="pt-4 flex justify-end">
+      <div className="flex justify-end gap-4 border-t pt-8">
         {isEditMode ? (
-          <div className="flex gap-3">
+          <>
             <button
               type="button"
               onClick={handleCancel}
-              className="bg-gray-200 text-gray-800 px-6 py-2 rounded-full font-medium hover:bg-gray-300 cursor-pointer"
+              className="px-6 py-2 bg-white border border-gray-300 text-gray-700 rounded-md font-semibold hover:bg-gray-50"
             >
-              Cancel
+              Batal
             </button>
             <button
               type="submit"
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-full font-medium flex items-center disabled:opacity-50 cursor-pointer"
               disabled={isLoading}
+              className="px-6 py-2 bg-green-600 text-white rounded-md font-semibold hover:bg-green-700 disabled:opacity-50 flex items-center justify-center min-w-[120px]"
             >
               {isLoading ? (
-                <LoaderIcon className="animate-spin h-5 w-5 mr-2" />
+                <LoaderIcon className="h-5 w-5 animate-spin" />
               ) : (
-                "Save Changes"
+                "Simpan Perubahan"
               )}
             </button>
-          </div>
+          </>
         ) : (
           <button
             type="button"
             onClick={() => setIsEditMode(true)}
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-full font-medium cursor-pointer"
+            className="px-6 py-2 bg-green-600 text-white rounded-md font-semibold hover:bg-green-700"
           >
-            Edit Profile
+            Edit Profil
           </button>
         )}
       </div>

@@ -1,27 +1,27 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { IUser } from '@/lib/interface/auth';
-
-
-
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { IUser } from "@/lib/interface/auth";
 
 // Async thunk untuk mengambil data profil dari backend
 export const fetchProfile = createAsyncThunk(
-  'Profile/fetchProfile',
+  "Profile/fetchProfile",
   async (_, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/user/profile`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       const result = await res.json();
 
       if (!res.ok) {
-        throw new Error(result.message || 'Gagal mengambil profil');
+        throw new Error(result.message || "Gagal mengambil profil");
       }
 
       return result.data;
     } catch (err: any) {
-      return rejectWithValue(err.message || 'Gagal mengambil profil');
+      return rejectWithValue(err.message || "Gagal mengambil profil");
     }
   }
 );
@@ -33,7 +33,7 @@ const initialState: IUser = {
 };
 
 const ProfileSlice = createSlice({
-  name: 'customerProfile',
+  name: "customerProfile",
   initialState,
   reducers: {},
   extraReducers: (builder) => {
@@ -42,10 +42,13 @@ const ProfileSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchProfile.fulfilled, (state, action: PayloadAction<IUser['data']>) => {
-        state.loading = false;
-        state.data = action.payload;
-      })
+      .addCase(
+        fetchProfile.fulfilled,
+        (state, action: PayloadAction<IUser["data"]>) => {
+          state.loading = false;
+          state.data = action.payload;
+        }
+      )
       .addCase(fetchProfile.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;

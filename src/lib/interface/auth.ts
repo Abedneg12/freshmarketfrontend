@@ -8,6 +8,7 @@ export interface IUser {
     referralCode?: string;
     isVerified: boolean;
     role: "USER" | "SUPER_ADMIN" | "STORE_ADMIN";
+    hashPassword?: boolean;
   } | null;
   error: string | null;
 }

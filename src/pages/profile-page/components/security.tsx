@@ -2,78 +2,80 @@
 
 import React, { use, useState } from "react";
 import axios from "axios";
-import { useAppSelector } from "@/lib/redux/hooks";
 import { IUser, IMessageResponse } from "@/lib/interface/auth";
-import { LoaderIcon } from "lucide-react";
+import {
+  LoaderIcon,
+  AlertCircleIcon,
+  InfoIcon,
+  ShieldCheckIcon,
+} from "lucide-react";
+import { apiUrl } from "@/pages/config";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+type UserData = IUser["data"];
 
-interface Props {
-  user: IUser & { hashPassword?: boolean };
+interface SecurityProps {
+  user: UserData | null;
 }
 
-export default function Security({ user }: Props) {
-  const { coordinates } = useAppSelector((state) => state.location);
+export default function Security({ user }: SecurityProps) {
   const [isEditMode, setIsEditMode] = useState(false);
-  const [isCreateMode, setIsCreateMode] = useState(false);
-  const [changePasswordData, setChangePasswordData] = useState({
-    oldPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
-  const [createPasswordData, setCreatePasswordData] = useState({
+  const [formData, setFormData] = useState({
+    currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
+  // Logika utama untuk membedakan pengguna password dan pengguna social login
+  // Ia akan mengecek properti 'hasPassword' yang dikirim dari backend
+  const isPasswordUser = user?.hashPassword === true;
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError(null);
+    setSuccessMessage("");
+  };
+
+  const handleSaveChanges = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setSuccess("");
-    setIsLoading(true);
+    setSuccessMessage("");
 
+    if (formData.newPassword.length < 6) {
+      setError("Password baru minimal harus 6 karakter.");
+      return;
+    }
+
+    if (formData.newPassword !== formData.confirmPassword) {
+      setError("Password baru dan konfirmasi password tidak cocok.");
+      return;
+    }
+
+    setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
-      if (!token)
-        throw new Error("Token tidak ditemukan. Silakan login kembali.");
-      let endpoint = "";
-      let payload = {};
-
-      if (isCreateMode) {
-        if (
-          createPasswordData.newPassword !== createPasswordData.confirmPassword
-        )
-          throw new Error("Password baru tidak cocok.");
-        endpoint = `${API_URL}/api/user/create-password`;
-        payload = { password: createPasswordData.newPassword };
-      } else {
-        if (
-          changePasswordData.newPassword !== changePasswordData.confirmPassword
-        )
-          throw new Error("Password baru tidak cocok.");
-        endpoint = `${API_URL}/api/user/change-password`;
-        payload = {
-          oldPassword: changePasswordData.oldPassword,
-          newPassword: changePasswordData.newPassword,
-        };
-      }
-      const config = {
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const response = await axios.put(
+        `${apiUrl}/api/users/change-password`,
+        {
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword,
         },
-      };
-      const response = isCreateMode
-        ? await axios.post<IMessageResponse>(endpoint, payload, config)
-        : await axios.patch<IMessageResponse>(endpoint, payload, config);
-      setSuccess(response.data.message || "Password berhasil diganti.");
-      handleCancel();
-    } catch (error: any) {
-      setError(
-        error.response?.data?.error || error.message || "Terjadi kesalahan."
+        { headers: { Authorization: `Bearer ${token}` } }
       );
+
+      setSuccessMessage(
+        (response.data as IMessageResponse).message || "Password berhasil diperbarui!"
+      );
+      setIsEditMode(false);
+      setFormData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Gagal memperbarui password.");
     } finally {
       setIsLoading(false);
     }
@@ -81,213 +83,135 @@ export default function Security({ user }: Props) {
 
   const handleCancel = () => {
     setIsEditMode(false);
-    setIsCreateMode(false);
     setError(null);
-    setSuccess("");
-    setChangePasswordData({
-      oldPassword: "",
+    setSuccessMessage("");
+    setFormData({
+      currentPassword: "",
       newPassword: "",
       confirmPassword: "",
     });
-    setCreatePasswordData({ newPassword: "", confirmPassword: "" });
   };
 
+  // Jika BUKAN pengguna password, tampilkan pesan ini dan hentikan.
+  if (!isPasswordUser) {
+    return (
+      <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-lg flex items-start">
+        <InfoIcon className="h-6 w-6 mr-3 flex-shrink-0 mt-1" />
+        <div>
+          <h3 className="text-lg font-semibold">
+            Anda login menggunakan Akun Sosial
+          </h3>
+          <p className="text-sm">
+            Fitur ubah kata sandi tidak tersedia untuk akun yang terhubung
+            dengan penyedia layanan sosial. Untuk mengubah kata sandi, silakan
+            lakukan melalui halaman pengaturan akun sosial Anda.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Jika IYA pengguna password, tampilkan form dengan skema "Mode Edit".
   return (
-    <div className="space-y-8">
+    <form onSubmit={handleSaveChanges} className="space-y-6">
+      <h3 className="text-lg font-semibold text-gray-900">Ubah Password</h3>
+
       {error && (
-        <div className="p-3 bg-red-100 text-red-700 rounded-md">{error}</div>
+        <div className="bg-red-50 p-3 rounded-md text-red-700 text-sm flex items-center">
+          <AlertCircleIcon className="h-5 w-5 mr-2" /> {error}
+        </div>
       )}
-      {success && (
-        <div className="p-3 bg-green-100 text-green-700 rounded-md">
-          {success}
+      {successMessage && !isEditMode && (
+        <div className="bg-green-50 p-3 rounded-md text-green-700 text-sm flex items-center">
+          <ShieldCheckIcon className="h-5 w-5 mr-2" />
+          {successMessage}
         </div>
       )}
 
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Password</h3>
+        <label className="block text-sm font-medium text-gray-700">
+          Password Saat Ini
+        </label>
+        <input
+          type="password"
+          name="currentPassword"
+          value={formData.currentPassword}
+          onChange={handleChange}
+          readOnly={!isEditMode}
+          required
+          className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-black ${
+            !isEditMode ? "bg-gray-100 cursor-not-allowed" : ""
+          }`}
+        />
+      </div>
 
-        {/* PENJELASAN: Logika utama untuk menampilkan UI yang sesuai. */}
-        {user.hashPassword ? (
-          // --- JIKA PENGGUNA PUNYA PASSWORD ---
-          isEditMode ? (
-            // Tampilkan form ubah password jika dalam mode edit
-            <form
-              onSubmit={handlePasswordSubmit}
-              className="space-y-4 max-w-lg"
-            >
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Current Password
-                </label>
-                <input
-                  type="password"
-                  name="oldPassword"
-                  onChange={(e) =>
-                    setChangePasswordData({
-                      ...changePasswordData,
-                      oldPassword: e.target.value,
-                    })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  New Password
-                </label>
-                <input
-                  type="password"
-                  name="newPassword"
-                  onChange={(e) =>
-                    setChangePasswordData({
-                      ...changePasswordData,
-                      newPassword: e.target.value,
-                    })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm New Password
-                </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  onChange={(e) =>
-                    setChangePasswordData({
-                      ...changePasswordData,
-                      confirmPassword: e.target.value,
-                    })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div className="pt-2 flex gap-3">
-                <button
-                  type="submit"
-                  className="bg-green-600 text-white px-6 py-2 rounded-lg"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <LoaderIcon className="animate-spin" />
-                  ) : (
-                    "Update Password"
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          ) : (
-            // Tampilan awal untuk pengguna dengan password
-            <div className="flex items-center justify-between max-w-lg">
-              <p className="text-gray-600">
-                Update your password for better security.
-              </p>
-              <button
-                onClick={() => setIsEditMode(true)}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded-lg font-medium cursor-pointer"
-              >
-                Edit
-              </button>
-            </div>
-          )
-        ) : // --- JIKA PENGGUNA TIDAK PUNYA PASSWORD (LOGIN VIA GOOGLE) ---
-        isCreateMode ? (
-          // Tampilkan form buat password jika dalam mode create
-          <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-lg">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                New Password
-              </label>
-              <input
-                type="password"
-                name="newPassword"
-                onChange={(e) =>
-                  setCreatePasswordData({
-                    ...createPasswordData,
-                    newPassword: e.target.value,
-                  })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Confirm New Password
-              </label>
-              <input
-                type="password"
-                name="confirmPassword"
-                onChange={(e) =>
-                  setCreatePasswordData({
-                    ...createPasswordData,
-                    confirmPassword: e.target.value,
-                  })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              />
-            </div>
-            <div className="pt-2 flex gap-3">
-              <button
-                type="submit"
-                className="bg-green-600 text-white px-6 py-2 rounded-lg"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <LoaderIcon className="animate-spin" />
-                ) : (
-                  "Create Password"
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        ) : (
-          // Tampilan awal untuk pengguna Google
-          <div className="flex items-center justify-between max-w-lg">
-            <p className="text-gray-600">
-              You are logged in with Google. Create a password to log in with
-              email.
-            </p>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">
+          Password Baru
+        </label>
+        <input
+          type="password"
+          name="newPassword"
+          value={formData.newPassword}
+          onChange={handleChange}
+          readOnly={!isEditMode}
+          required
+          minLength={6}
+          className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-black ${
+            !isEditMode ? "bg-gray-100 cursor-not-allowed" : ""
+          }`}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700">
+          Konfirmasi Password Baru
+        </label>
+        <input
+          type="password"
+          name="confirmPassword"
+          value={formData.confirmPassword}
+          onChange={handleChange}
+          readOnly={!isEditMode}
+          required
+          className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-black ${
+            !isEditMode ? "bg-gray-100 cursor-not-allowed" : ""
+          }`}
+        />
+      </div>
+
+      <div className="flex justify-end gap-4">
+        {isEditMode ? (
+          <>
             <button
-              onClick={() => setIsCreateMode(true)}
-              className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium cursor-pointer"
+              type="button"
+              onClick={handleCancel}
+              className="px-6 py-2 bg-white border border-gray-300 text-gray-700 rounded-md font-semibold hover:bg-gray-50"
             >
-              Create Password
+              Batal
             </button>
-          </div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-6 py-2 bg-green-600 text-white rounded-md font-semibold hover:bg-green-700 disabled:opacity-50 flex items-center justify-center min-w-[140px]"
+            >
+              {isLoading ? (
+                <LoaderIcon className="h-5 w-5 animate-spin" />
+              ) : (
+                "Simpan Password"
+              )}
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setIsEditMode(true)}
+            className="px-6 py-2 bg-green-600 text-white rounded-md font-semibold hover:bg-green-700"
+          >
+            Ubah Password
+          </button>
         )}
       </div>
-
-      {/* --- Bagian Lokasi --- */}
-      <div className="border-t border-gray-200 pt-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
-          Current Location
-        </h3>
-        <p className="text-gray-600">
-          This is the location used for this session to find the nearest stores.
-        </p>
-        <p className="text-sm text-gray-500 mt-1 font-mono">
-          {coordinates
-            ? `Lat: ${coordinates.lat.toFixed(
-                4
-              )}, Lng: ${coordinates.lng.toFixed(4)}`
-            : "Location not available"}
-        </p>
-      </div>
-    </div>
+    </form>
   );
 }
