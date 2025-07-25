@@ -88,7 +88,7 @@ export default function PersonalInformation({
       try {
         const token = localStorage.getItem("token");
         await axios.put(
-          `${apiUrl}/api/users/profile`,
+          `${apiUrl}/api/user/profile`,
           { fullName: formData.fullName },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -105,7 +105,7 @@ export default function PersonalInformation({
       try {
         const token = localStorage.getItem("token");
         const response = await axios.post<IMessageResponse>(
-          `${apiUrl}/api/users/request-email-update`,
+          `${apiUrl}/api/user/request-email-update`,
           { newEmail: formData.email },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -124,7 +124,7 @@ export default function PersonalInformation({
       imageData.append("file", profileImage);
       try {
         const token = localStorage.getItem("token");
-        await axios.put(`${apiUrl}/api/users/profile-picture`, imageData, {
+        await axios.patch(`${apiUrl}/api/user/profile/picture`, imageData, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",

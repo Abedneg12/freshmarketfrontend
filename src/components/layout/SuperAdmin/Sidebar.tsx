@@ -17,9 +17,8 @@ export default function Sidebar({ showMenu, setShowMenu }: SidebarProps) {
   const navigation = [
     { name: 'Dashboard', icon: LayoutDashboardIcon, id: 'dashboard', path: '/super-admin/dashboard' },
     { name: 'Order', icon: NotebookPenIcon, id: 'reports', path: '/super-admin/order' },
-    { name: 'Store Management', icon: StoreIcon, id: 'stores', path: '/super-admin/store' },
+    { name: 'Store Management', icon: StoreIcon, id: 'stores', path: '/super-admin/storeManagement' },
     { name: 'Inventory', icon: PackageIcon, id: 'inventory', path: '/super-admin/inventory' },
-    { name: 'Discount', icon: PercentCircleIcon, id: 'discount', path: '/super-admin/discount' },
     { name: 'Category', icon: Layers, id: 'category', path: '/super-admin/category' },
     { name: 'Admin Accounts', icon: UsersIcon, id: 'admins', path: '/super-admin/admins' },
     { name: 'Users Accounts', icon: UserIcon, id: 'users', path: '/super-admin/users' },

@@ -52,7 +52,7 @@ export default function Security({ user }: SecurityProps) {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.put(
-        `${apiUrl}/api/users/change-password`,
+        `${apiUrl}/api/user/change-password`,
         {
           currentPassword: formData.currentPassword,
           newPassword: formData.newPassword,
