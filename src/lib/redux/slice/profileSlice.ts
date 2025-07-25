@@ -1,39 +1,46 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { IUser } from "@/lib/interface/auth";
+import { apiUrl } from "@/pages/config";
+import axios from "axios";
+
+const initialState: IUser = {
+  loading: true,
+  id: 0,
+  fullName: "",
+  email: "",
+  profilePicture: undefined,
+  referralCode: undefined,
+  isVerified: false,
+  role: "USER",
+  error: null,
+  provider: "local",
+  hashPassword: "",
+};
 
 // Async thunk untuk mengambil data profil dari backend
 export const fetchProfile = createAsyncThunk(
-  "Profile/fetchProfile",
+  "profile/fetchProfile",
   async (_, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/user/profile`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      const result = await res.json();
-
-      if (!res.ok) {
-        throw new Error(result.message || "Gagal mengambil profil");
+      if (!token) {
+        return rejectWithValue("Token tidak ditemukan");
       }
-
-      return result.data;
+      const response = await axios.get(`${apiUrl}/api/user/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = response.data as { data: IUser };
+      return data.data;
     } catch (err: any) {
-      return rejectWithValue(err.message || "Gagal mengambil profil");
+      return rejectWithValue(
+        err.response?.data?.error || "Gagal mengambil profil"
+      );
     }
   }
 );
 
-const initialState: IUser = {
-  loading: false,
-  data: null,
-  error: null,
-};
-
-const ProfileSlice = createSlice({
-  name: "customerProfile",
+const profileSlice = createSlice({
+  name: "profile",
   initialState,
   reducers: {},
   extraReducers: (builder) => {
@@ -42,13 +49,10 @@ const ProfileSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(
-        fetchProfile.fulfilled,
-        (state, action: PayloadAction<IUser["data"]>) => {
-          state.loading = false;
-          state.data = action.payload;
-        }
-      )
+      .addCase(fetchProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        Object.assign(state, action.payload);
+      })
       .addCase(fetchProfile.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
@@ -56,4 +60,4 @@ const ProfileSlice = createSlice({
   },
 });
 
-export default ProfileSlice.reducer;
+export default profileSlice.reducer;

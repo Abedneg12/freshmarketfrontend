@@ -13,10 +13,8 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("personal");
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
-  const { data: profile, loading: profileLoading } = useAppSelector(
-    (state) => state.profile
-  );
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const profile = useAppSelector((state) => state.profile);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -31,7 +29,7 @@ export default function ProfilePage() {
     }
   }, [isAuthenticated, router]);
 
-  if (profileLoading || !isAuthenticated || !user) {
+  if (profile.loading || !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoaderIcon className="h-8 w-8 animate-spin text-green-600" />

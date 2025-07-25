@@ -32,11 +32,16 @@ export default function ConditionalLayout({
         localStorage.removeItem("token");
       }
     }
+
+    if (isAuthenticated) {
+      dispatch(fetchProfile());
+    }
   }, [dispatch, isAuthenticated]);
 
-  if (isAuthenticated && user?.data?.role === "SUPER_ADMIN") {
+  console.log("user", user);
+  if (user?.role == "SUPER_ADMIN") {
     return <SuperAdminDashboard>{children}</SuperAdminDashboard>;
-  } else if (isAuthenticated && user?.data?.role === "STORE_ADMIN") {
+  } else if (isAuthenticated && user?.role === "STORE_ADMIN") {
     return <StoreAdminLayout>{children}</StoreAdminLayout>;
   } else {
     console.log(user);

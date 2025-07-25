@@ -11,10 +11,8 @@ import {
 } from "lucide-react";
 import { apiUrl } from "@/pages/config";
 
-type UserData = IUser["data"];
-
 interface SecurityProps {
-  user: UserData | null;
+  user: IUser | null;
 }
 
 export default function Security({ user }: SecurityProps) {
@@ -27,10 +25,7 @@ export default function Security({ user }: SecurityProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState("");
-
-  // Logika utama untuk membedakan pengguna password dan pengguna social login
-  // Ia akan mengecek properti 'hasPassword' yang dikirim dari backend
-  const isPasswordUser = user?.hashPassword === true;
+  const isPasswordUser = !!user?.hashPassword;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -66,7 +61,8 @@ export default function Security({ user }: SecurityProps) {
       );
 
       setSuccessMessage(
-        (response.data as IMessageResponse).message || "Password berhasil diperbarui!"
+        (response.data as IMessageResponse).message ||
+          "Password berhasil diperbarui!"
       );
       setIsEditMode(false);
       setFormData({
@@ -92,7 +88,6 @@ export default function Security({ user }: SecurityProps) {
     });
   };
 
-  // Jika BUKAN pengguna password, tampilkan pesan ini dan hentikan.
   if (!isPasswordUser) {
     return (
       <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-lg flex items-start">
@@ -111,7 +106,6 @@ export default function Security({ user }: SecurityProps) {
     );
   }
 
-  // Jika IYA pengguna password, tampilkan form dengan skema "Mode Edit".
   return (
     <form onSubmit={handleSaveChanges} className="space-y-6">
       <h3 className="text-lg font-semibold text-gray-900">Ubah Password</h3>

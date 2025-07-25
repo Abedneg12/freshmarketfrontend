@@ -17,10 +17,8 @@ import { apiUrl } from "@/pages/config";
 const defaultAvatarSvg =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a0aec0' stroke-width='1.5'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E";
 
-type UserData = IUser["data"];
-
 interface PersonalInformationProps {
-  user: UserData | null;
+  user: IUser | null;
 }
 
 export default function PersonalInformation({
@@ -30,12 +28,12 @@ export default function PersonalInformation({
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: user?.fullName || "", // Langsung akses user.fullName
-    email: user?.email || "", // Langsung akses user.email
+    fullName: user?.fullName || "",
+    email: user?.email || "",
   });
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(
-    user?.profilePicture || null // Langsung akses user.profilePicture
+    user?.profilePicture || null
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,7 +84,6 @@ export default function PersonalInformation({
     let emailUpdateSuccess = false;
     let pictureUpdateSuccess = false;
 
-    // --- PERUBAHAN 2: Akses data langsung ---
     if (formData.fullName !== user?.fullName) {
       try {
         const token = localStorage.getItem("token");
@@ -96,8 +93,9 @@ export default function PersonalInformation({
           { headers: { Authorization: `Bearer ${token}` } }
         );
         nameUpdateSuccess = true;
-      } catch (err) {
-        /* error handling */
+      } catch (err: any) {
+        setError(err.response?.data?.error || "Gagal memperbarui nama.");
+        nameUpdateSuccess = false;
       }
     } else {
       nameUpdateSuccess = true;
@@ -133,8 +131,9 @@ export default function PersonalInformation({
           },
         });
         pictureUpdateSuccess = true;
-      } catch (err) {
-        /* error handling */
+      } catch (err: any) {
+        setError(err.response?.data?.error || "Gagal memperbarui foto profil.");
+        pictureUpdateSuccess = false;
       }
     } else {
       pictureUpdateSuccess = true;
@@ -165,7 +164,6 @@ export default function PersonalInformation({
   };
 
   const handleCopyReferral = () => {
-    // --- PERUBAHAN 3: Akses data langsung ---
     if (user?.referralCode) {
       navigator.clipboard.writeText(user.referralCode);
       setCopySuccess("Kode berhasil disalin!");
