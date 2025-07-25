@@ -7,29 +7,29 @@ import PersonalInformation from "./components/personal-information";
 import Security from "./components/security";
 import AddressManagement from "./components/address.management";
 import { useRouter } from "next/navigation";
-import { isAuthenticated } from "@/utils/auth"; // 1. Impor utilitas isAuthenticated
+import { fetchProfile } from "@/lib/redux/slice/profileSlice";
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("personal");
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const profile = useAppSelector((state) => state.profile);
 
-  // PENJELASAN: Kita sekarang mengambil 'user' dan 'isAuthenticated' dari state Redux.
-  // 'isAuthenticated' akan menjadi 'true' setelah sesi dipulihkan.
-  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
-
-  // PENJELASAN: useEffect ini sekarang bertindak sebagai "penjaga" untuk halaman ini.
-  // Ini adalah pengganti dari middleware untuk halaman profil.
   useEffect(() => {
-    // Jika setelah pengecekan, pengguna ternyata tidak terautentikasi,
-    // arahkan mereka ke halaman login.
-    if (!isAuthenticated) {
+    if (isAuthenticated) {
+      dispatch(fetchProfile());
+    }
+  }, [isAuthenticated, dispatch]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token && !isAuthenticated) {
       router.replace("/login?redirect_url=/profile");
     }
-  }, [router]);
+  }, [isAuthenticated, router]);
 
-  // PENJELASAN: Tampilkan loading spinner jika state Redux belum siap
-  // atau jika pengguna belum terautentikasi. Ini mencegah "kedipan" UI.
-  if (!isAuthenticated || !user) {
+  if (profile.loading || !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoaderIcon className="h-8 w-8 animate-spin text-green-600" />
@@ -89,8 +89,11 @@ export default function ProfilePage() {
 
           <main className="lg:w-3/4">
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-              {activeTab === "personal" && <PersonalInformation user={user} />}
-              {activeTab === "security" && <Security user={user} />}
+              {/* 4. Gunakan data 'profile' yang sudah di-fetch */}
+              {activeTab === "personal" && (
+                <PersonalInformation user={profile} />
+              )}
+              {activeTab === "security" && <Security user={profile} />}
               {activeTab === "addresses" && <AddressManagement />}
             </div>
           </main>

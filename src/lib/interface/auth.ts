@@ -1,15 +1,15 @@
 export interface IUser {
   loading: boolean;
-  data: {
-    id: number;
-    fullName: string;
-    email: string;
-    profilePicture?: string;
-    referralCode?: string;
-    isVerified: boolean;
-    role: "USER" | "SUPER_ADMIN" | "STORE_ADMIN";
-  } | null;
+  id: number;
+  fullName: string;
+  email: string;
+  profilePicture?: string;
+  referralCode?: string;
+  isVerified: boolean;
+  role: "USER" | "SUPER_ADMIN" | "STORE_ADMIN";
   error: string | null;
+  hashPassword?: string;
+  provider?: string;
 }
 export interface ILogin {
   email: string;
