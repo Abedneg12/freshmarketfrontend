@@ -9,6 +9,8 @@ import adminStoreReducer from "./slice/adminStoreSlice";
 import productReducer from "./slice/orderSlice";
 import storeProductReducer from "./slice/storeProductSlice";
 import ProfileReducer from "./slice/profileSlice";
+import adminrodersReducer from "./slice/adminorderslice";
+import adminProductreducer from "./slice/storeadminproductSlice";
 
 
 export const store = configureStore({
@@ -23,6 +25,8 @@ export const store = configureStore({
     product: productReducer,
     storeProduct: storeProductReducer,
     profile: ProfileReducer,
+    adminorders: adminrodersReducer, 
+    adminProducts: adminProductreducer,
   },
 });
 
