@@ -8,6 +8,8 @@ export interface IUser {
   isVerified: boolean;
   role: "USER" | "SUPER_ADMIN" | "STORE_ADMIN";
   error: string | null;
+  hashPassword?: string;
+  provider?: string;
 }
 export interface ILogin {
   email: string;

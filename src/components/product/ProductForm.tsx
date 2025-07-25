@@ -7,6 +7,7 @@ import axios from 'axios';
 import { Product, StoreStock } from '@/lib/interface/product.type';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import { fetchMarket } from '@/lib/redux/slice/storeSlice';
+import { fetchRecommendations } from '@/lib/redux/slice/nearestStoreSlice';
 
 interface ProductFormProps {
   onSubmit: (formData: FormData) => void;
@@ -167,6 +168,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     };
     fetchCategories
     dispatch(fetchMarket());
+    dispatch(fetchRecommendations());
   }, [dispatch]);
 
   return (

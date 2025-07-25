@@ -3,7 +3,6 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import { fetchCartItems } from '@/lib/redux/slice/cartSlice';
-// [FIXED] Mengimpor dari addressSlice, bukan authSlice
 import { fetchAddresses } from '@/lib/redux/slice/addressSlice';
 import { createOrder, resetOrderStatus } from '@/lib/redux/slice/orderSlice';
 import { CreditCardIcon, TruckIcon } from 'lucide-react';
@@ -19,16 +18,13 @@ export default function CheckoutPage() {
 
     // Ambil data yang relevan dari Redux store
     const { carts } = useAppSelector((state) => state.cart);
-    // [FIXED] Mengambil 'addresses' dari state.address
     const { addresses } = useAppSelector((state) => state.address);
     const { status: orderStatus, error: orderError } = useAppSelector((state) => state.order);
 
     // Ambil data awal (keranjang & alamat) saat komponen dimuat
     useEffect(() => {
         dispatch(fetchCartItems());
-        // [FIXED] Memanggil action fetchAddresses yang benar
         dispatch(fetchAddresses());
-        // Selalu reset status order sebelumnya saat masuk halaman checkout
         dispatch(resetOrderStatus());
     }, [dispatch]);
 
@@ -60,7 +56,6 @@ export default function CheckoutPage() {
             return;
         }
 
-        // Dispatch action createOrder yang akan memanggil API backend
         const resultAction = await dispatch(createOrder({
             addressId: selectedAddressId,
             paymentMethod,
@@ -74,8 +69,8 @@ export default function CheckoutPage() {
                 // Jika dapat URL Midtrans, arahkan pengguna ke sana
                 window.location.href = midtransRedirectUrl;
             } else {
-                // Jika tidak (misal: transfer manual), arahkan ke halaman sukses
-                router.push(`/orders/${order.id}?status=success`);
+                // [DIUBAH] Jika transfer manual, arahkan ke halaman instruksi pembayaran
+                router.push(`/pembayaran/${order.id}`);
             }
         }
     };

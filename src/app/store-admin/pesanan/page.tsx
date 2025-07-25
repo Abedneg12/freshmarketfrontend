@@ -1,30 +1,14 @@
 'use client';
 
-import React, { useState, useMemo, type FC } from 'react';
-import { Search, ChevronDown, Eye, Filter } from 'lucide-react';
+import React, { useState, useMemo, type FC, useEffect } from 'react';
+import { Search, ChevronDown, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
+import { fetchAdminOrders } from '@/lib/redux/slice/adminorderslice';
 
-// --- Tipe Data Dummy ---
+// --- Tipe Data dari Slice ---
 type OrderStatus = 'PROCESSED' | 'SHIPPED' | 'CONFIRMED' | 'CANCELED' | 'WAITING_CONFIRMATION';
 
-interface DummyOrder {
-    id: string;
-    customerName: string;
-    date: string;
-    total: number;
-    status: OrderStatus;
-}
-
-// --- Data Dummy untuk Pesanan ---
-const dummyOrders: DummyOrder[] = [
-    { id: 'FM-12345', customerName: 'Budi Santoso', date: '2025-07-10', total: 250000, status: 'PROCESSED' },
-    { id: 'FM-12344', customerName: 'Citra Lestari', date: '2025-07-10', total: 150000, status: 'SHIPPED' },
-    { id: 'FM-12343', customerName: 'Ahmad Yani', date: '2025-07-09', total: 75000, status: 'WAITING_CONFIRMATION' },
-    { id: 'FM-12342', customerName: 'Dewi Anggraini', date: '2025-07-09', total: 550000, status: 'CONFIRMED' },
-    { id: 'FM-12341', customerName: 'Eko Prasetyo', date: '2025-07-08', total: 85000, status: 'CANCELED' },
-    { id: 'FM-12340', customerName: 'Fitriana', date: '2025-07-08', total: 120000, status: 'CONFIRMED' },
-];
-
-// --- Komponen Badge Status ---
+// --- Komponen Badge Status (Tidak Berubah) ---
 const StatusBadge: FC<{ status: OrderStatus }> = ({ status }) => {
     const statusStyles = {
         PROCESSED: 'bg-blue-100 text-blue-700',
@@ -49,20 +33,61 @@ const StatusBadge: FC<{ status: OrderStatus }> = ({ status }) => {
     );
 };
 
+// --- Komponen Pagination (Sekarang menggunakan data dari Redux) ---
+const Pagination: FC<{ pagination: any, onPageChange: (page: number) => void }> = ({ pagination, onPageChange }) => {
+    if (!pagination || pagination.totalPages <= 1) return null;
+
+    return (
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-200/80">
+            <button 
+                onClick={() => onPageChange(pagination.page - 1)}
+                disabled={pagination.page === 1}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+                <ChevronLeft size={16} />
+                <span>Sebelumnya</span>
+            </button>
+            <span className="text-sm text-gray-700">
+                Halaman {pagination.page} dari {pagination.totalPages}
+            </span>
+            <button 
+                onClick={() => onPageChange(pagination.page + 1)}
+                disabled={pagination.page === pagination.totalPages}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+                <span>Berikutnya</span>
+                <ChevronRight size={16} />
+            </button>
+        </div>
+    );
+};
+
 
 // --- Komponen Utama Halaman Pesanan ---
 export default function AdminOrdersPage() {
+    const dispatch = useAppDispatch();
+    const { orders, pagination, loading, error } = useAppSelector((state) => state.adminorders);
+    
+    // State untuk filter dan pencarian
     const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
+    const [statusFilter, setStatusFilter] = useState<string>('all');
+    const [currentPage, setCurrentPage] = useState(1);
 
-    const filteredOrders = useMemo(() => {
-        return dummyOrders
-            .filter(order => statusFilter === 'all' || order.status === statusFilter)
-            .filter(order => 
-                order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                order.customerName.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-    }, [searchTerm, statusFilter]);
+    // useEffect untuk mengambil data saat filter atau halaman berubah
+    useEffect(() => {
+        const filters: { page: number; status?: string; search?: string } = { page: currentPage };
+        if (statusFilter !== 'all') {
+            filters.status = statusFilter;
+        }
+        if (searchTerm) {
+            filters.search = searchTerm;
+        }
+        dispatch(fetchAdminOrders(filters));
+    }, [dispatch, currentPage, statusFilter, searchTerm]);
+
+    const handlePageChange = (newPage: number) => {
+        setCurrentPage(newPage);
+    };
 
     return (
         <div className="space-y-8">
@@ -87,7 +112,7 @@ export default function AdminOrdersPage() {
                 <div className="relative">
                     <select
                         value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value as OrderStatus | 'all')}
+                        onChange={(e) => setStatusFilter(e.target.value)}
                         className="appearance-none w-full md:w-48 pl-4 pr-10 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
                     >
                         <option value="all">Semua Status</option>
@@ -102,46 +127,65 @@ export default function AdminOrdersPage() {
             </div>
 
             {/* Tabel Daftar Pesanan */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200/80 overflow-x-auto">
-                <table className="w-full text-sm">
-                    <thead className="bg-gray-50 text-left">
-                        <tr>
-                            <th className="px-6 py-4 font-semibold text-gray-600">ID Pesanan</th>
-                            <th className="px-6 py-4 font-semibold text-gray-600">Pelanggan</th>
-                            <th className="px-6 py-4 font-semibold text-gray-600">Tanggal</th>
-                            <th className="px-6 py-4 font-semibold text-gray-600 text-right">Total</th>
-                            <th className="px-6 py-4 font-semibold text-gray-600 text-center">Status</th>
-                            <th className="px-6 py-4 font-semibold text-gray-600 text-right">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                        {filteredOrders.map((order) => (
-                            <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                                <td className="px-6 py-4 font-medium text-gray-800">{order.id}</td>
-                                <td className="px-6 py-4 text-gray-600">{order.customerName}</td>
-                                <td className="px-6 py-4 text-gray-600">{order.date}</td>
-                                <td className="px-6 py-4 text-gray-800 font-medium text-right">
-                                    Rp {order.total.toLocaleString('id-ID')}
-                                </td>
-                                <td className="px-6 py-4 text-center">
-                                    <StatusBadge status={order.status} />
-                                </td>
-                                <td className="px-6 py-4 text-right">
-                                    <button className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors">
-                                        <Eye size={16} />
-                                    </button>
-                                </td>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200/80 overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead className="bg-gray-50 text-left">
+                            <tr>
+                                <th className="px-6 py-4 font-semibold text-gray-600">ID Pesanan</th>
+                                <th className="px-6 py-4 font-semibold text-gray-600">Pelanggan</th>
+                                <th className="px-6 py-4 font-semibold text-gray-600">Tanggal</th>
+                                <th className="px-6 py-4 font-semibold text-gray-600 text-right">Total</th>
+                                <th className="px-6 py-4 font-semibold text-gray-600 text-center">Status</th>
+                                <th className="px-6 py-4 font-semibold text-gray-600 text-right">Aksi</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-                {filteredOrders.length === 0 && (
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                            {loading && (
+                                <tr>
+                                    <td colSpan={6} className="text-center py-12">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+                                        <p className="mt-2 text-gray-500">Memuat data pesanan...</p>
+                                    </td>
+                                </tr>
+                            )}
+                            {!loading && error && (
+                                <tr>
+                                    <td colSpan={6} className="text-center py-12 text-red-500">
+                                        <p>Terjadi kesalahan: {error}</p>
+                                    </td>
+                                </tr>
+                            )}
+                            {!loading && !error && orders.length > 0 && orders.map((order) => (
+                                <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-6 py-4 font-medium text-gray-800 whitespace-nowrap">{`FM-${order.id}`}</td>
+                                    <td className="px-6 py-4 text-gray-600 whitespace-nowrap">{order.user.fullName}</td>
+                                    <td className="px-6 py-4 text-gray-600 whitespace-nowrap">
+                                        {new Date(order.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
+                                    </td>
+                                    <td className="px-6 py-4 text-gray-800 font-medium text-right whitespace-nowrap">
+                                        Rp {order.totalPrice.toLocaleString('id-ID')}
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
+                                        <StatusBadge status={order.status} />
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                        <button className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors">
+                                            <Eye size={16} />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                {!loading && !error && orders.length === 0 && (
                     <div className="text-center py-12 text-gray-500">
                         <p>Tidak ada pesanan yang cocok dengan filter Anda.</p>
                     </div>
                 )}
+                <Pagination pagination={pagination} onPageChange={handlePageChange} />
             </div>
-            {/* Di sini bisa ditambahkan komponen Pagination */}
         </div>
     );
 }

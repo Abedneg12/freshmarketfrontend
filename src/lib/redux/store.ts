@@ -11,6 +11,8 @@ import storeProductReducer from "./slice/storeProductSlice";
 import ProfileReducer from "./slice/profileSlice";
 import CategoryReducer from "./slice/categorySlice";
 import MarketReducer from "./slice/storeSlice";
+import adminrodersReducer from "./slice/adminorderslice";
+import adminProductreducer from "./slice/storeadminproductSlice";
 
 
 export const store = configureStore({
@@ -27,7 +29,8 @@ export const store = configureStore({
     profile: ProfileReducer,
     category: CategoryReducer,
     Market: MarketReducer,
-
+    adminorders: adminrodersReducer, 
+    adminProducts: adminProductreducer,
   },
 });
 
