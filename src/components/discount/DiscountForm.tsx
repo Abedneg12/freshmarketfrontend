@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { apiUrl} from '@/pages/config';
+import { apiUrl } from '@/pages/config';
 import { useRouter } from 'next/navigation';
 import { Market } from '@/lib/interface/market';
 import { Discount } from '@/lib/interface/discount.type';
@@ -15,7 +15,6 @@ interface Product {
 export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCancel: () => void; isEditing: boolean; editingDiscount?: Discount | null }) => {
   const router = useRouter();
   const { token } = useAppSelector((state) => state.auth);
-
   // Form states
   const [discountType, setDiscountType] = useState('PERCENTAGE');
   const [selectedStoreId, setSelectedStoreId] = useState<number | ''>('');
@@ -59,7 +58,7 @@ export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCance
     if (isEditing && editingDiscount) {
       console.log('Editing discount:', editingDiscount);
       setDiscountType(editingDiscount.type || 'PERCENTAGE');
-      console.log(`discount type :`, editingDiscount.type );
+      console.log(`discount type :`, editingDiscount.type);
       setSelectedStoreId(editingDiscount.storeId || '');
       setSelectedValue(editingDiscount.value || '');
       setSelectedProductId(editingDiscount.productId || '');
@@ -78,37 +77,57 @@ export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCance
       setStartDate('');
       setEndDate('');
     }
-  }, [isEditing]); 
+  }, [isEditing]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    let Url = '';
+    // Validation
+    if (discountType === "BUY1GET1" && !selectedProductId) {
+      alert("Product is required for Buy 1 Get 1 discount.");
+      return;
+    }
+    if ((discountType === "PERCENTAGE" || discountType === "NOMINAL")) {
+      if (!selectedValue || isNaN(Number(selectedValue))) {
+        alert("Discount value is required.");
+        return;
+      }
+      if (discountType === "PERCENTAGE" && (Number(selectedValue) <= 0 || Number(selectedValue) > 100)) {
+        alert("Percentage discount must be between 1 and 100.");
+        return;
+      }
+    }
+
     let payload: any = {
       storeId: Number(selectedStoreId),
-      value: selectedValue,
-      startDate: startDate,
-      endDate: endDate,
+      startDate,
+      endDate,
+      type: discountType,
     };
 
+    // BOGO
     if (discountType === 'BUY1GET1') {
-      Url = `${apiUrl}/discount/bogo`;
-      payload = { ...payload, productId: Number(selectedProductId) };
-    } else if (discountType === 'PERCENTAGE') {
-      Url = `${apiUrl}/discount/product`;
-      payload = { ...payload, productId: Number(selectedProductId) };
-    } else if (discountType === 'NOMINAL') {
-      Url = `${apiUrl}/discount/voucher`;
-      payload = {
-        ...payload,
-        minPurchase: Number(minPurchase),
-        maxDiscount: maxDiscount !== '' ? Number(maxDiscount) : undefined,
-      };
+      payload.productId = Number(selectedProductId);
+    }
+    // Percentage & Nominal
+    if (discountType === 'PERCENTAGE' || discountType === 'NOMINAL') {
+      payload.value = Number(selectedValue);
+      if (selectedProductId) {
+        payload.productId = Number(selectedProductId);
+        // minPurchase is optional if productId is set
+        if (minPurchase) payload.minPurchase = Number(minPurchase);
+      } else {
+        // minPurchase is required if no productId
+        payload.minPurchase = Number(minPurchase);
+      }
+      if (discountType === 'PERCENTAGE' && maxDiscount !== '') {
+        payload.maxDiscount = Number(maxDiscount);
+      }
     }
 
     try {
       if (isEditing && editingDiscount?.id) {
-        await axios.put(`${Url}/${editingDiscount.id}`, payload, {
+        await axios.put(`${apiUrl}/discount/${editingDiscount.id}`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -116,7 +135,7 @@ export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCance
         });
         alert('Discount updated!');
       } else {
-        await axios.post(Url, payload, {
+        await axios.post(`${apiUrl}/discount`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -158,9 +177,9 @@ export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCance
               onChange={e => setDiscountType(e.target.value)}
               className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
             >
-              <option value="PERCENTAGE">Product</option>
+              <option value="PERCENTAGE">Percentage</option>
               <option value="BUY1GET1">Buy 1 Get 1</option>
-              <option value="NOMINAL">Voucher</option>
+              <option value="NOMINAL">Nominal</option>
             </select>
           </div>
           {/* Store Select */}
@@ -183,22 +202,8 @@ export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCance
               ))}
             </select>
           </div>
-          {/* Value */}
-          <div>
-            <label htmlFor="value" className="block text-sm font-medium text-black">
-              Value
-            </label>
-            <input
-              type="text"
-              name="value"
-              id="value"
-              value={selectedValue}
-              onChange={e => setSelectedValue(e.target.value)}
-              className="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"
-            />
-          </div>
           {/* Product Select */}
-          {(discountType === 'BUY1GET1' || discountType === 'PERCENTAGE') && (
+          {(discountType === 'BUY1GET1' || discountType === 'PERCENTAGE' || discountType === 'NOMINAL') && (
             <div>
               <label htmlFor="productId" className="block text-sm font-medium text-black">
                 Product
@@ -208,6 +213,7 @@ export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCance
                 name="productId"
                 value={selectedProductId}
                 onChange={e => setSelectedProductId(Number(e.target.value))}
+                required
                 className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
               >
                 <option value="">Select a product</option>
@@ -219,36 +225,68 @@ export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCance
               </select>
             </div>
           )}
-          {/* Voucher fields */}
-          {discountType === 'NOMINAL' && (
-            <>
-              <div>
-                <label htmlFor="minPurchase" className="block text-sm font-medium text-black">
-                  Minimum Purchase
-                </label>
-                <input
-                  type="number"
-                  name="minPurchase"
-                  id="minPurchase"
-                  value={minPurchase}
-                  onChange={e => setMinPurchase(Number(e.target.value))}
-                  className="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"
-                />
-              </div>
-              <div>
-                <label htmlFor="maxDiscount" className="block text-sm font-medium text-black">
-                  Maximum Discount
-                </label>
-                <input
-                  type="number"
-                  name="maxDiscount"
-                  id="maxDiscount"
-                  value={maxDiscount}
-                  onChange={e => setMaxDiscount(Number(e.target.value))}
-                  className="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"
-                />
-              </div>
-            </>
+
+          {/* Value */}
+          {(discountType === 'PERCENTAGE' || discountType === 'NOMINAL') && (
+            <div>
+              <label htmlFor="value" className="block text-sm font-medium text-black">
+                Value {discountType === 'PERCENTAGE' ? '(%)' : '(Nominal)'}
+              </label>
+              <input
+                type="number"
+                name="value"
+                id="value"
+                value={selectedValue}
+                min={discountType === 'PERCENTAGE' ? 1 : 0}
+                max={discountType === 'PERCENTAGE' ? 100 : undefined}
+                onChange={e => {
+                  const val = e.target.value;
+                  if (discountType === 'PERCENTAGE' && Number(val) > 100) {
+                    setSelectedValue('100');
+                  } else {
+                    setSelectedValue(val);
+                  }
+                }}
+                className="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"
+              />
+              {discountType === 'PERCENTAGE' && Number(selectedValue) > 100 && (
+                <p className="text-red-500 text-xs mt-1">Percentage cannot be more than 100.</p>
+              )}
+            </div>
+          )}
+
+          {/* minPurchase for cart-wide */}
+          {(discountType === 'PERCENTAGE' || discountType === 'NOMINAL') && !selectedProductId && (
+            <div>
+              <label htmlFor="minPurchase" className="block text-sm font-medium text-black">
+                Minimum Purchase
+              </label>
+              <input
+                type="number"
+                name="minPurchase"
+                id="minPurchase"
+                value={minPurchase}
+                onChange={e => setMinPurchase(Number(e.target.value))}
+                className="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"
+              />
+            </div>
+          )}
+
+          {/* maxDiscount for percentage */}
+          {discountType === 'PERCENTAGE' && (
+            <div>
+              <label htmlFor="maxDiscount" className="block text-sm font-medium text-black">
+                Maximum Discount
+              </label>
+              <input
+                type="number"
+                name="maxDiscount"
+                id="maxDiscount"
+                value={maxDiscount}
+                onChange={e => setMaxDiscount(Number(e.target.value))}
+                className="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"
+              />
+            </div>
           )}
           {/* Dates */}
           <div>
@@ -261,6 +299,7 @@ export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCance
               id="startDate"
               value={startDate}
               onChange={e => setStartDate(e.target.value)}
+              required
               className="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"
             />
           </div>
@@ -274,6 +313,7 @@ export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCance
               id="endDate"
               value={endDate}
               onChange={e => setEndDate(e.target.value)}
+              required
               className="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"
             />
           </div>

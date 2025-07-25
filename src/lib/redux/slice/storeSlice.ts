@@ -13,7 +13,7 @@ const initialState: StoreState = {
   loading: false,
 };
 
-export const fetchStore = createAsyncThunk(
+export const fetchMarket = createAsyncThunk(
   "stores/all",
   async (_, thunkAPI) => {
     try {
@@ -28,28 +28,28 @@ export const fetchStore = createAsyncThunk(
   }
 );
 
-const storeSlice = createSlice({
+const marketSlice = createSlice({
   name: "store",
   initialState,
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchStore.pending, (state) => {
+      .addCase(fetchMarket.pending, (state) => {
         state.loading = true;
         state.error = undefined;
       })
       .addCase(
-        fetchStore.fulfilled,
+        fetchMarket.fulfilled,
         (state, action: PayloadAction<StoreState["data"]>) => {
           state.data = action.payload;
           state.loading = false;
         }
       )
-      .addCase(fetchStore.rejected, (state, action) => {
+      .addCase(fetchMarket.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });
   },
 });
 
-export default storeSlice.reducer;
+export default marketSlice.reducer;

@@ -1,8 +1,26 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
+
 export const Hero = () => {
-  return <section className="relative bg-green-50 overflow-hidden">
+  const router = useRouter();
+
+  // Scroll to ProductNearestShop section
+  const handleViewStores = () => {
+    const el = document.getElementById('nearest-shop-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  // Go to login page
+  const handleGetStarted = () => {
+    router.push('/login');
+  };
+
+  return (
+    <section className="relative bg-green-50 overflow-hidden">
       <div className="container mx-auto px-4 py-16 md:py-24 flex flex-col md:flex-row items-center">
         <div className="md:w-1/2 z-10">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-800 mb-4">
@@ -14,10 +32,16 @@ export const Hero = () => {
             little as 2 hours.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <button className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full font-medium transition-colors text-lg">
+            <button
+              className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full font-medium transition-colors text-lg"
+              onClick={handleGetStarted}
+            >
               Get Started
             </button>
-            <button className="border border-green-600 text-green-600 hover:bg-green-50 px-8 py-3 rounded-full font-medium transition-colors text-lg">
+            <button
+              className="border border-green-600 text-green-600 hover:bg-green-50 px-8 py-3 rounded-full font-medium transition-colors text-lg"
+              onClick={handleViewStores}
+            >
               View Stores
             </button>
           </div>
@@ -40,5 +64,6 @@ export const Hero = () => {
         </div>
       </div>
       <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent"></div>
-    </section>;
+    </section>
+  );
 };

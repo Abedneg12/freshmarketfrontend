@@ -67,11 +67,11 @@ export default function DiscountPage() {
   };
   useEffect(() => {
     fetchDiscounts();
-  }, []);
+  }, [showForm]);
 
   const columns = [
     { label: 'Type', accessor: 'type' },
-    { label: 'Value', accessor: 'value', render: (row: any) => Number(row.value) / 1000 + 'K' },
+    { label: 'Value', accessor: 'value', render: (row: any) => Number(row.value) ? `${row.value} ${row.type === 'PERCENTAGE' ? '%' : ''}` : 'N/A' },
     { label: 'Start Date', accessor: 'startDate', render: (row: any) => new Date(row.startDate).toLocaleDateString() },
     { label: 'End Date', accessor: 'endDate', render: (row: any) => new Date(row.endDate).toLocaleDateString() },
   ];

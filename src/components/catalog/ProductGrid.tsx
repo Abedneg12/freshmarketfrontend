@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import { fetchStoreProducts } from '@/lib/redux/slice/storeProductSlice';
 import { apiUrl } from '@/pages/config';
 import axios from 'axios';
+import { fetchMarket } from '@/lib/redux/slice/storeSlice';
 interface ProductGridProps {
   category: string;
   searchTerm: string;
@@ -30,7 +31,7 @@ export const ProductGrid = ({
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [Products, setProducts] = useState<Product[]>([]);
   const [showAll, setShowAll] = useState(false);
-  const { data: markets, loading: storesLoading } = useAppSelector((state) => state.store);
+  const { data: markets, loading: storesLoading } = useAppSelector((state) => state.Market);
 
   const fetchProducts = async () => {
     try {
@@ -53,7 +54,10 @@ export const ProductGrid = ({
 
   useEffect(() => {
     const fetchAll = async () => {
-      if (!markets) return;
+      if (markets.length === 0) {
+        dispatch(fetchMarket());
+        return;
+      }
       const all: storeProduct[] = [];
       for (const store of markets) {
         const result = await dispatch(fetchStoreProducts(store.id)).unwrap();
@@ -64,6 +68,9 @@ export const ProductGrid = ({
         }
       }
       setAllStoreProducts(all);
+      console.log('All Store Products:', all);
+      console.log('All Products:', all.flatMap(store => store.products));
+      console.log(markets);
       setAllProducts(all.flatMap(store => store.products));
     };
     fetchAll();
@@ -75,47 +82,48 @@ export const ProductGrid = ({
   useEffect(() => {
     setLoading(true);
     setTimeout(() => {
-
       let filteredProducts = [...allProducts];
+      console.log('Filtered Productss:', allProducts);
+      console.log('Filtered Products:', filteredProducts);
       // Filter by store if storeId is provided
-      if (storeId) {
-        // In a real app, you would filter based on actual store inventory
-        // For now, we'll just show a subset of products
-        filteredProducts = filteredProducts.filter((_, index) => index % 2 === 0);
-      }
+      // if (storeId) {
+      //   // In a real app, you would filter based on actual store inventory
+      //   // For now, we'll just show a subset of products
+      //   filteredProducts = filteredProducts.filter((_, index) => index % 2 === 0);
+      // }
       // if (dealsOnly) {
       //   filteredProducts = filteredProducts.filter(p => p.);
       // }
-      if (category !== 'all') {
-        filteredProducts = filteredProducts.filter(p => p.category.name === category);
-      }
+      // if (category !== 'all') {
+      //   filteredProducts = filteredProducts.filter(p => p.category.name === category);
+      // }
       if (searchTerm) {
         const term = searchTerm.toLowerCase();
         filteredProducts = filteredProducts.filter(p => p.name.toLowerCase().includes(term));
       }
 
-      switch (filters.sortBy) {
-        case 'discount':
-          filteredProducts.sort((a, b) => {
-            const discountA = a.price ? (a.basePrice - a.price) / a.basePrice : 0;
-            const discountB = b.price ? (b.basePrice - b.price) / b.basePrice : 0;
-            return discountB - discountA;
-          });
-          break;
-        case 'price-asc':
-          filteredProducts.sort((a, b) => (a.price || a.basePrice) - (b.price || b.basePrice));
-          break;
-        case 'price-desc':
-          filteredProducts.sort((a, b) => (b.price || b.basePrice) - (a.price || a.basePrice));
-          break;
-        default:
-          filteredProducts.sort((a, b) => {
-            const discountA = a.price ? (a.basePrice - a.price) / a.basePrice : 0;
-            const discountB = b.price ? (b.basePrice - b.price) / b.basePrice : 0;
-            return discountB - discountA;
-          });
-      }
-      //setProducts(allProducts);
+      // switch (filters.sortBy) {
+      //   case 'discount':
+      //     filteredProducts.sort((a, b) => {
+      //       const discountA = a.price ? (a.basePrice - a.price) / a.basePrice : 0;
+      //       const discountB = b.price ? (b.basePrice - b.price) / b.basePrice : 0;
+      //       return discountB - discountA;
+      //     });
+      //     break;
+      //   case 'price-asc':
+      //     filteredProducts.sort((a, b) => (a.price || a.basePrice) - (b.price || b.basePrice));
+      //     break;
+      //   case 'price-desc':
+      //     filteredProducts.sort((a, b) => (b.price || b.basePrice) - (a.price || a.basePrice));
+      //     break;
+      //   default:
+      //     filteredProducts.sort((a, b) => {
+      //       const discountA = a.price ? (a.basePrice - a.price) / a.basePrice : 0;
+      //       const discountB = b.price ? (b.basePrice - b.price) / b.basePrice : 0;
+      //       return discountB - discountA;
+      //     });
+      // }
+      setProducts(filteredProducts);
       setLoading(false);
     }, 800);
   }, [category, searchTerm, filters, dealsOnly, storeId]);

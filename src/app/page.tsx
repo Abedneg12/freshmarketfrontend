@@ -36,8 +36,10 @@ export default function Home () {
   return (
     <>
       <Hero />
-      <ProductNearestShop />
+        <ProductNearestShop />
+      <div id="nearest-shop-section">
       <LocationBased />
+      </div>
     </>
   );
 }
