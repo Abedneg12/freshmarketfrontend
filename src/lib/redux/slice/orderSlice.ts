@@ -4,8 +4,6 @@ import axios from 'axios';
 import { RootState } from '../store';
 
 // --- Definisi Tipe Data ---
-// Sebaiknya tipe-tipe ini berada di file interface terpusat
-
 interface IOrder {
   id: number;
   status: string;
@@ -29,6 +27,11 @@ interface IOrderResponse {
   midtransRedirectUrl?: string;
 }
 
+interface IApiCreateOrderResponse {
+    message: string;
+    data: IOrderResponse;
+}
+
 interface OrderState {
   orders: IOrder[];
   pagination: IOrderListResponse['pagination'] | null;
@@ -47,6 +50,7 @@ const initialState: OrderState = {
   lastOrderResponse: null,
 };
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 // --- Async Thunks (Sesuai dengan Router Backend) ---
 
@@ -62,12 +66,12 @@ export const createOrder = createAsyncThunk<
   { state: RootState }
 >('order/create', async (orderData, { getState }) => {
   const token = getState().auth.token;
-  const response = await axios.post<IOrderResponse>(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/orders`,
+  const response = await axios.post<IApiCreateOrderResponse>(
+    `${API_BASE_URL}/api/orders`,
     orderData,
     { headers: { Authorization: `Bearer ${token}` } }
   );
-  return response.data;
+  return response.data.data;
 });
 
 // GET /api/orders/my -> Mengambil riwayat pesanan pengguna
@@ -75,10 +79,22 @@ export const fetchUserOrders = createAsyncThunk<IOrderListResponse, void, { stat
     'order/fetchUserOrders',
     async (_, { getState }) => {
         const token = getState().auth.token;
-        const response = await axios.get<IOrderListResponse>(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/my`, {
+        const response = await axios.get<IOrderListResponse>(`${API_BASE_URL}/api/orders/my`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         return response.data;
+    }
+);
+
+// [DITAMBAHKAN] GET /api/orders/my/:orderId -> Mengambil detail satu pesanan
+export const fetchOrderById = createAsyncThunk<IOrder, number, { state: RootState }>(
+    'order/fetchById',
+    async (orderId, { getState }) => {
+        const token = getState().auth.token;
+        const response = await axios.get<{ data: IOrder }>(`${API_BASE_URL}/api/orders/my/${orderId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data.data;
     }
 );
 
@@ -91,7 +107,7 @@ export const uploadPaymentProof = createAsyncThunk<IOrder, { orderId: number; pr
         formData.append('paymentProof', proofFile);
 
         const response = await axios.post<{ data: IOrder }>(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/orders/${orderId}/payment-proof`,
+            `${API_BASE_URL}/api/orders/${orderId}/payment-proof`,
             formData,
             { headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` } }
         );
@@ -105,7 +121,7 @@ export const cancelOrderByUser = createAsyncThunk<IOrder, number, { state: RootS
     async (orderId, { getState }) => {
         const token = getState().auth.token;
         const response = await axios.post<{ data: IOrder }>(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/orders/my/${orderId}/cancel`,
+            `${API_BASE_URL}/api/orders/my/${orderId}/cancel`,
             {}, // Body kosong
             { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -119,7 +135,7 @@ export const confirmOrderReceived = createAsyncThunk<IOrder, number, { state: Ro
     async (orderId, { getState }) => {
         const token = getState().auth.token;
         const response = await axios.post<{ data: IOrder }>(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/orders/my/${orderId}/confirm`,
+            `${API_BASE_URL}/api/orders/my/${orderId}/confirm`,
             {}, // Body kosong
             { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -165,16 +181,26 @@ const orderSlice = createSlice({
         state.pagination = action.payload.pagination;
       })
       .addCase(fetchUserOrders.rejected, handleRejected)
+      
+      // [DITAMBAHKAN] Fetch Order By Id
+      .addCase(fetchOrderById.pending, handlePending)
+      .addCase(fetchOrderById.fulfilled, (state, action: PayloadAction<IOrder>) => {
+        state.status = 'succeeded';
+        state.currentOrder = action.payload;
+      })
+      .addCase(fetchOrderById.rejected, handleRejected)
+
       .addMatcher(
         (action) => [uploadPaymentProof, cancelOrderByUser, confirmOrderReceived].some(thunk => thunk.fulfilled.match(action)),
         (state, action: PayloadAction<IOrder>) => {
             state.status = 'succeeded';
-            // Cari dan perbarui order yang relevan di dalam state.orders
             const index = state.orders.findIndex(order => order.id === action.payload.id);
             if (index !== -1) {
                 state.orders[index] = action.payload;
             }
-            state.currentOrder = action.payload; // Update juga order yang sedang dilihat
+            if (state.currentOrder?.id === action.payload.id) {
+                state.currentOrder = action.payload;
+            }
         }
       )
       .addMatcher(
