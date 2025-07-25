@@ -41,6 +41,7 @@ export const ProductNearestShop = () => {
 
   // Limit to 8 unless showAll is true
   const productsToShow = showAll ? uniqueProducts : uniqueProducts.slice(0, 8);
+
   return (
     <section className="py-16 bg-white">
       <div className="container mx-auto px-4">

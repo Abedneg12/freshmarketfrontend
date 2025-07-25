@@ -6,7 +6,7 @@ import { Category } from '@/lib/interface/category.type';
 import axios from 'axios';
 import { Product, StoreStock } from '@/lib/interface/product.type';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
-import { fetchStore } from '@/lib/redux/slice/storeSlice';
+import { fetchMarket } from '@/lib/redux/slice/storeSlice';
 
 interface ProductFormProps {
   onSubmit: (formData: FormData) => void;
@@ -166,7 +166,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       }
     };
     fetchCategories
-    dispatch(fetchStore());
+    dispatch(fetchMarket());
   }, [dispatch]);
 
   return (

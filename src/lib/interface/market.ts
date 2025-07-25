@@ -1,10 +1,4 @@
-export interface Product {
-  id: string;
-  name: string;
-  price: number;
-  imageUrl: string;
-  stock: number;
-}
+import { Product } from "./product.type";
 
 export interface StoreRecommendation {
   id: string;
