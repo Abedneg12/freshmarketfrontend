@@ -7,7 +7,6 @@ import {
   createAddress,
   updateAddress,
   deleteAddress,
-  setMainAddress,
 } from "@/lib/redux/slice/addressSlice";
 import { LoaderIcon, PlusIcon } from "lucide-react";
 import { IAddress } from "@/lib/interface/address";
@@ -19,6 +18,7 @@ export default function AddressManagement() {
   const { addresses, loading, error } = useAppSelector(
     (state) => state.address
   );
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<IAddress | null>(null);
 
@@ -26,10 +26,25 @@ export default function AddressManagement() {
     dispatch(fetchAddresses());
   }, [dispatch]);
 
-  console.log('Addresses:', addresses);
-  const handleOpenForm = (address: IAddress | null) => {
+  const handleAddNew = () => {
+    setEditingAddress(null);
+    setIsFormOpen(true);
+  };
+
+  const handleEdit = (address: IAddress) => {
     setEditingAddress(address);
     setIsFormOpen(true);
+  };
+
+  const handleDelete = (addressId: number) => {
+    if (window.confirm("Apakah Anda yakin ingin menghapus alamat ini?")) {
+      dispatch(deleteAddress(addressId));
+    }
+  };
+
+  const handleSetMain = (addressId: number) => {
+    const addressData = { isMain: true };
+    dispatch(updateAddress({ addressId, addressData }));
   };
 
   const handleCloseForm = () => {
@@ -37,71 +52,45 @@ export default function AddressManagement() {
     setEditingAddress(null);
   };
 
-  const handleSaveAddress = async (data: any) => {
+  const handleSaveAddress = async (
+    addressData: Omit<IAddress, "id" | "latitude" | "longitude">
+  ) => {
     if (editingAddress) {
-      await dispatch(updateAddress({ id: editingAddress.id, ...data }));
+      await dispatch(
+        updateAddress({ addressId: editingAddress.id, addressData })
+      );
     } else {
-      await dispatch(createAddress(data));
+      await dispatch(createAddress(addressData));
     }
+
     handleCloseForm();
-    dispatch(fetchAddresses());
-  };
-
-  const handleDeleteAddress = async (id: number) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus alamat ini?")) {
-      await dispatch(deleteAddress(id));
-    }
-  };
-
-  const handleSetMainAddress = async (id: number) => {
-    await dispatch(setMainAddress(id));
     dispatch(fetchAddresses());
   };
 
   if (loading && addresses.length === 0) {
     return (
-      <div className="flex justify-center items-center h-40">
-        <LoaderIcon className="animate-spin h-8 w-8 text-green-600" />
+      <div className="flex justify-center items-center py-10">
+        <LoaderIcon className="h-8 w-8 animate-spin text-green-600" />
       </div>
     );
   }
 
-  if (error) {
-    return <div className="text-red-500 text-center">{error}</div>;
-  }
-
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center border-b pb-4">
-        <h2 className="text-xl font-bold">Your Addresses</h2>
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold text-gray-900">
+          Alamat Tersimpan
+        </h3>
         <button
-          onClick={() => handleOpenForm(null)}
-          className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-green-700 text-sm font-medium"
+          onClick={handleAddNew}
+          className="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-green-700 flex items-center gap-2"
         >
-          <PlusIcon className="h-5 w-5 mr-2" />
-          Add New Address
+          <PlusIcon className="h-4 w-4" />
+          Tambah Alamat
         </button>
       </div>
 
-      {error && <div className="text-red-500 text-center">{error}</div>}
-
-      {addresses.length > 0 ? (
-        <div className="space-y-4">
-          {addresses.map((address) => (
-            <AddressCard
-              key={address.id}
-              address={address}
-              onEdit={() => handleOpenForm(address)}
-              onDelete={() => handleDeleteAddress(address.id)}
-              onSetMain={() => handleSetMainAddress(address.id)}
-            />
-          ))}
-        </div>
-      ) : (
-        <p className="text-gray-500 text-center py-10">
-          You have no saved addresses.
-        </p>
-      )}
+      {error && <p className="text-red-500">{error}</p>}
 
       {isFormOpen && (
         <AddressForm
@@ -111,6 +100,24 @@ export default function AddressManagement() {
           isLoading={loading}
         />
       )}
+
+      <div className="space-y-4">
+        {addresses.length > 0
+          ? addresses.map((address) => (
+              <AddressCard
+                key={address.id}
+                address={address}
+                onEdit={() => handleEdit(address)}
+                onDelete={() => handleDelete(address.id)}
+                onSetMain={() => handleSetMain(address.id)}
+              />
+            ))
+          : !isFormOpen && (
+              <p className="text-gray-500 text-center py-4">
+                Anda belum memiliki alamat tersimpan.
+              </p>
+            )}
+      </div>
     </div>
   );
 }

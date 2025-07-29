@@ -1,9 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
 import { IAddress } from "@/lib/interface/address";
-import build from "next/dist/build";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { apiUrl } from "@/pages/config";
 
 interface AddressState {
   addresses: IAddress[];
@@ -17,18 +15,18 @@ const initialState: AddressState = {
   error: null,
 };
 
-export const fetchAddresses = createAsyncThunk<IAddress[]>(
+export const fetchAddresses = createAsyncThunk<IAddress[], void>(
   "address/fetchAddresses",
   async (_, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(`${API_URL}/api/addresses`, {
+      const response = await axios.get<IAddress[]>(`${apiUrl}/api/addresses`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return response.data as IAddress[];
+      return response.data;
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data?.error || "Gagal mengambil alamat."
+        error.response?.data?.message || "Gagal mengambil alamat."
       );
     }
   }
@@ -36,65 +34,59 @@ export const fetchAddresses = createAsyncThunk<IAddress[]>(
 
 export const createAddress = createAsyncThunk<
   IAddress,
-  Omit<IAddress, "id" | "latitude" | "longitude">
->("address/create", async (addressData, { rejectWithValue }) => {
+  Omit<IAddress, "id" | "latitude" | "longitude">,
+  { rejectValue: string }
+>("address/createAddress", async (addressData, { rejectWithValue }) => {
   try {
     const token = localStorage.getItem("token");
-    const response = await axios.post(`${API_URL}/api/addresses`, addressData, {
+    const response = await axios.post(`${apiUrl}/api/addresses`, addressData, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data as IAddress;
   } catch (error: any) {
-    return rejectWithValue(error.response?.data?.error);
+    return rejectWithValue(
+      error.response?.data?.message || "Gagal membuat alamat."
+    );
   }
 });
 
 export const updateAddress = createAsyncThunk<
   IAddress,
-  Partial<IAddress> & { id: number }
->("address/update", async (addressData, { rejectWithValue }) => {
-  try {
-    const token = localStorage.getItem("token");
-    const { id, ...data } = addressData;
-    const response = await axios.put(`${API_URL}/api/addresses/${id}`, data, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return response.data as IAddress;
-  } catch (error: any) {
-    return rejectWithValue(error.response?.data?.error);
-  }
-});
-
-export const deleteAddress = createAsyncThunk<number, number>(
-  "address/delete",
-  async (addressId, { rejectWithValue }) => {
+  { addressId: number; addressData: Partial<Omit<IAddress, "id">> }
+>(
+  "address/updateAddress",
+  async ({ addressId, addressData }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`${API_URL}/api/addresses/${addressId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return addressId;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.error);
-    }
-  }
-);
-
-export const setMainAddress = createAsyncThunk<IAddress, number>(
-  "address/setMain",
-  async (addressId, { rejectWithValue }) => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.patch(
-        `${API_URL}/api/addresses/${addressId}/set-main`,
-        {},
+      const response = await axios.put<IAddress>(
+        `${apiUrl}/api/addresses/${addressId}`,
+        addressData,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
       return response.data as IAddress;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.error);
+    } catch (err: any) {
+      return rejectWithValue(
+        err.response?.data?.message || "Gagal memperbarui alamat."
+      );
+    }
+  }
+);
+
+export const deleteAddress = createAsyncThunk(
+  "address/deleteAddress",
+  async (addressId: number, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`${apiUrl}/api/addresses/${addressId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return addressId;
+    } catch (err: any) {
+      return rejectWithValue(
+        err.response?.data?.message || "Gagal menghapus alamat."
+      );
     }
   }
 );
@@ -107,7 +99,6 @@ const addressSlice = createSlice({
     builder
       .addCase(fetchAddresses.pending, (state) => {
         state.loading = true;
-        state.error = null;
       })
       .addCase(
         fetchAddresses.fulfilled,
@@ -120,26 +111,41 @@ const addressSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      .addCase(createAddress.fulfilled, (state, action) => {
-        state.addresses.push(action.payload);
-      })
-      .addCase(updateAddress.fulfilled, (state, action) => {
-        const index = state.addresses.findIndex(
-          (a) => a.id === action.payload.id
-        );
-        if (index !== -1) state.addresses[index] = action.payload;
-      })
-      .addCase(setMainAddress.fulfilled, (state, action) => {
-        state.addresses = state.addresses.map((a) => ({
-          ...a,
-          isMain: a.id === action.payload.id,
-        }));
-      })
-      .addCase(deleteAddress.fulfilled, (state, action) => {
-        state.addresses = state.addresses.filter(
-          (a) => a.id !== action.payload
-        );
-      });
+      .addCase(
+        createAddress.fulfilled,
+        (state, action: PayloadAction<IAddress>) => {
+          if (action.payload.isMain) {
+            state.addresses.forEach((addr) => {
+              addr.isMain = false;
+            });
+          }
+          state.addresses.push(action.payload);
+        }
+      )
+      .addCase(
+        updateAddress.fulfilled,
+        (state, action: PayloadAction<IAddress>) => {
+          const index = state.addresses.findIndex(
+            (addr) => addr.id === action.payload.id
+          );
+          if (index !== -1) {
+            if (action.payload.isMain) {
+              state.addresses.forEach((addr) => {
+                addr.isMain = false;
+              });
+            }
+            state.addresses[index] = action.payload;
+          }
+        }
+      )
+      .addCase(
+        deleteAddress.fulfilled,
+        (state, action: PayloadAction<number>) => {
+          state.addresses = state.addresses.filter(
+            (addr) => addr.id !== action.payload
+          );
+        }
+      );
   },
 });
 
