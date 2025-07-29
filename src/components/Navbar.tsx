@@ -27,15 +27,15 @@ const Navbar: React.FC = () => {
   const profile = useAppSelector((state) => state.profile);
   const { totalQuantity } = useAppSelector((state) => state.cart);
 
-  // // 3. useEffect untuk memeriksa sesi dan mengambil data profil & keranjang
-  // useEffect(() => {
-  //   // Coba ambil profil jika ada token di local storage
-  //   const token = localStorage.getItem("token");
-  //   if (token && !user) {
-  //     // Hanya fetch jika user belum ada di state
-  //     dispatch(fetchProfile());
-  //   }
-  // }, [dispatch, user]);
+  // 3. useEffect untuk memeriksa sesi dan mengambil data profil & keranjang
+  useEffect(() => {
+    // Coba ambil profil jika ada token di local storage
+    const token = localStorage.getItem("token");
+    if (token && !profile) {
+      // Hanya fetch jika user belum ada di state
+      dispatch(fetchProfile());
+    }
+  }, [dispatch, profile]);
 
   useEffect(() => {
     // Ambil jumlah keranjang setiap kali status autentikasi menjadi true

@@ -56,7 +56,7 @@ export const fetchAdminProducts = createAsyncThunk<
         try {
             const token = getState().auth.token;
             // Endpoint ini harus sesuai dengan yang Anda daftarkan di index.ts untuk product.admin.router.ts
-            const response = await axios.get<IAdminProductsResponse>(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/admin/products`, {
+            const response = await axios.get<IAdminProductsResponse>(`${process.env.NEXT_PUBLIC_API_URL}/product/katalog`, {
                 headers: { Authorization: `Bearer ${token}` },
                 params: filters,
             });

@@ -4,9 +4,11 @@ import React, { useEffect, type FC, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppSelector, useAppDispatch } from '@/lib/redux/hooks';
 import { fetchProfile } from '@/lib/redux/slice/profileSlice';
-import { ShoppingCart, Archive, BarChart3, ArrowRight } from 'lucide-react';
+// 1. Impor thunk untuk mengambil aktivitas
+import { fetchDashboardSummary, fetchRecentActivity } from '@/lib/redux/slice/storeadminDashboardSlice'; 
+import { ShoppingCart, Archive, BarChart3, ArrowRight, CheckCircle2, Truck, XCircle } from 'lucide-react';
 
-
+// --- Komponen SummaryCard (Tidak Berubah) ---
 interface SummaryCardProps {
     title: string;
     value: string;
@@ -20,7 +22,6 @@ const SummaryCard: FC<SummaryCardProps> = ({ title, value, icon: Icon, color }) 
         yellow: 'bg-yellow-100 text-yellow-600',
         blue: 'bg-blue-100 text-blue-600',
     };
-
     return (
         <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300 group cursor-pointer">
             <div className="flex justify-between items-start">
@@ -38,91 +39,96 @@ const SummaryCard: FC<SummaryCardProps> = ({ title, value, icon: Icon, color }) 
     );
 };
 
+// --- [BARU] Komponen untuk menampilkan satu item aktivitas ---
+const ActivityItem: FC<{ log: any }> = ({ log }) => {
+    const statusInfo = {
+        PROCESSED: { icon: CheckCircle2, color: 'blue', text: `Pembayaran untuk pesanan #${log.order.id} telah dikonfirmasi.` },
+        SHIPPED: { icon: Truck, color: 'purple', text: `Pesanan #${log.order.id} telah dikirim.` },
+        CANCELED: { icon: XCircle, color: 'red', text: `Pesanan #${log.order.id} dibatalkan.` },
+        // Tambahkan status lain jika perlu
+        default: { icon: ShoppingCart, color: 'gray', text: log.note || `Status pesanan #${log.order.id} diubah.` }
+    };
+    const info = statusInfo[log.newStatus as keyof typeof statusInfo] || statusInfo.default;
+    const colorClasses = `bg-${info.color}-100 text-${info.color}-600`;
 
-// --- Komponen Utama Halaman Dasbor ---
+    return (
+        <li className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
+            <span className={`${colorClasses} p-1.5 rounded-full`}>
+                <info.icon size={16} />
+            </span>
+            <span>{info.text}</span>
+            <span className="ml-auto text-xs text-gray-400">
+                {new Date(log.changedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+        </li>
+    );
+};
+
+
+
 export default function StoreAdminDashboardPage() {
     const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+    // 2. Ambil data aktivitas terbaru dari Redux store
+    const { summary, recentActivity, loading: summaryLoading } = useAppSelector((state) => state.storeAdminDashboard);
     const router = useRouter();
     const dispatch = useAppDispatch();
 
-    // --- Pengecekan Otentikasi & Otorisasi ---
-    // useEffect(() => {
-    //     const localToken = localStorage.getItem('token');
-    //     // Jika tidak ada token, langsung redirect ke login
-    //     if (!localToken) {
-    //         // Anda bisa menggunakan toast di sini
-    //         console.error("Redirecting: No token found.");
-    //         router.push('/login');
-    //         return;
-    //     }
-    //     // Jika ada token tapi data user belum ada di Redux, ambil data profil
-    //     if (localToken && !user) {
-    //         dispatch(fetchProfile());
-    //     }
-    // }, [dispatch, router, user]);
+    useEffect(() => {
+        const localToken = localStorage.getItem('token');
+        if (!localToken) {
+            router.push('/login');
+            return;
+        }
+        if (localToken && !user) {
+            dispatch(fetchProfile());
+        }
+    }, [dispatch, router, user]);
 
-    // useEffect(() => {
-    //     // Efek ini berjalan setelah data user ada di Redux
-    //     if (isAuthenticated && user) {
-    //         // Jika role tidak sesuai, redirect ke halaman utama
-    //         if (user.data?.role !== 'STORE_ADMIN' && user.data?.role !== 'SUPER_ADMIN') {
-    //             // Anda bisa menggunakan toast di sini
-    //             console.error("Redirecting: Insufficient role.");
-    //             router.push('/'); 
-    //         }
-    //     }
-    // }, [isAuthenticated, user, router]);
+    useEffect(() => {
+        if (isAuthenticated && user) {
+            if (user?.role !== 'STORE_ADMIN' && user?.role !== 'SUPER_ADMIN') {
+                router.push('/'); 
+            } else {
+                // 3. Panggil API ringkasan dan aktivitas
+                dispatch(fetchDashboardSummary());
+                dispatch(fetchRecentActivity());
+            }
+        }
+    }, [isAuthenticated, user, router, dispatch]);
 
-    // // --- Tampilan Loading ---
-    // // Tampilkan ini saat data user sedang diambil atau sebelum redirect
-    // if (!isAuthenticated || !user) {
-    //     return (
-    //         <div className="flex items-center justify-center h-full w-full">
-    //             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-    //         </div>
-    //     );
-    // }
+
+    if (!isAuthenticated || !user) {
+        return (
+            <div className="flex items-center justify-center h-full w-full">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+            </div>
+        );
+    }
 
     return (
         <main className="space-y-8">
             {/* Header Halaman */}
             <div>
                 <h1 className="text-3xl font-bold text-gray-800 tracking-tight">Dasbor Admin Toko</h1>
-                <p className="mt-1.5 text-gray-500">Selamat datang kembali, {user?.data?.fullName || 'Admin'}!</p>
+                <p className="mt-1.5 text-gray-500">Selamat datang kembali, {user?.fullName || 'Admin'}!</p>
             </div>
 
             {/* Kartu Ringkasan Statistik */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <SummaryCard title="Pesanan Baru" value="12" icon={ShoppingCart} color="green" />
-                <SummaryCard title="Stok Hampir Habis" value="5" icon={Archive} color="yellow" />
-                <SummaryCard title="Pendapatan Hari Ini" value="Rp 1.2jt" icon={BarChart3} color="blue" />
+                <SummaryCard title="Pesanan Baru" value={summaryLoading ? '...' : String(summary?.newOrders ?? 0)} icon={ShoppingCart} color="green" />
+                <SummaryCard title="Stok Hampir Habis" value={summaryLoading ? '...' : String(summary?.lowStockProducts ?? 0)} icon={Archive} color="yellow" />
+                <SummaryCard title="Pendapatan Hari Ini" value={summaryLoading ? '...' : `Rp ${(summary?.dailyRevenue ?? 0).toLocaleString('id-ID')}`} icon={BarChart3} color="blue" />
             </div>
 
             {/* Komponen Aktivitas Terbaru */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200/80 p-6">
                 <h2 className="text-lg font-semibold text-gray-800 mb-4">Aktivitas Terbaru</h2>
                 <ul className="space-y-3 text-sm text-gray-600">
-                    <li className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
-                        <span className="bg-blue-100 text-blue-600 p-1.5 rounded-full">
-                            <ShoppingCart size={16} />
-                        </span>
-                        <span>Pesanan baru #12345 telah dibuat.</span>
-                        <span className="ml-auto text-xs text-gray-400">5 menit lalu</span>
-                    </li>
-                    <li className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
-                         <span className="bg-green-100 text-green-600 p-1.5 rounded-full">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
-                        </span>
-                        <span>Pembayaran untuk pesanan #12344 telah dikonfirmasi.</span>
-                        <span className="ml-auto text-xs text-gray-400">1 jam lalu</span>
-                    </li>
-                    <li className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
-                        <span className="bg-yellow-100 text-yellow-600 p-1.5 rounded-full">
-                            <Archive size={16} />
-                        </span>
-                        <span>Stok untuk "Organic Avocado" hampir habis.</span>
-                        <span className="ml-auto text-xs text-gray-400">3 jam lalu</span>
-                    </li>
+                    {recentActivity.length > 0 ? (
+                        recentActivity.map(log => <ActivityItem key={log.id} log={log} />)
+                    ) : (
+                        <p className="text-center text-gray-500 py-4">Tidak ada aktivitas terbaru.</p>
+                    )}
                 </ul>
             </div>
         </main>
