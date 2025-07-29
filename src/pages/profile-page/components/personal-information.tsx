@@ -87,7 +87,7 @@ export default function PersonalInformation({
     if (formData.fullName !== user?.fullName) {
       try {
         const token = localStorage.getItem("token");
-        await axios.put(
+        await axios.patch(
           `${apiUrl}/api/user/profile`,
           { fullName: formData.fullName },
           { headers: { Authorization: `Bearer ${token}` } }

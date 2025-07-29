@@ -6,7 +6,7 @@ import { LoaderIcon } from "lucide-react";
 interface AddressFormProps {
   address?: IAddress | null;
   onClose: () => void;
-  onSave: (data: any) => Promise<void>;
+  onSave: (data: Omit<IAddress, 'id' | 'latitude' | 'longitude'>) => void;
   isLoading: boolean;
 }
 
@@ -53,9 +53,9 @@ export default function AddressForm({
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    onSave(formData); // Kirim formData langsung
   };
 
   return (
