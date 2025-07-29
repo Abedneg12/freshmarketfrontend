@@ -51,8 +51,8 @@ export default function Security({ user }: SecurityProps) {
     setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.put(
-        `${apiUrl}/api/users/change-password`,
+      const response = await axios.patch(
+        `${apiUrl}/api/user/change-password`,
         {
           currentPassword: formData.currentPassword,
           newPassword: formData.newPassword,

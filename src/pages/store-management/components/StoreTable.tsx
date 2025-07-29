@@ -1,10 +1,10 @@
 import React from "react";
 import { PencilIcon, TrashIcon } from "lucide-react";
-import { IAdminStore } from "@/lib/redux/slice/adminStoreSlice";
+import { Store } from "@/lib/interface/store.type";
 
 interface StoreTableProps {
-  stores: IAdminStore[];
-  onEdit: (store: IAdminStore) => void;
+  stores: Store[];
+  onEdit: (store: Store) => void;
   onDelete: (storeId: number) => void;
 }
 
@@ -22,10 +22,10 @@ export default function StoreTable({
               Store
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-              Location
+              City
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-              Admins
+              Address
             </th>
             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
               Actions
@@ -39,11 +39,10 @@ export default function StoreTable({
                 {store.name}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {store.address}
+                {store.city}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {store.admins.map((admin) => admin.user.fullName).join(", ") ||
-                  "N/A"}
+                {store.address}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <button
