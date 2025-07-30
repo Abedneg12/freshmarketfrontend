@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { RootState } from '../store';
 
-
+// --- Definisi Tipe Data ---
 interface IStockInfo {
     quantity: number;
     storeId: number;
@@ -14,7 +14,7 @@ interface IAdminProduct {
     basePrice: number;
     images: { imageUrl: string }[];
     category: { name: string };
-    stocks: IStockInfo[]; 
+    stocks: IStockInfo[];
 }
 
 interface IPagination {
@@ -45,7 +45,6 @@ const initialState: IAdminProductState = {
 
 // --- Async Thunks ---
 
-// Thunk untuk mengambil daftar produk (katalog) untuk Store Admin
 export const fetchAdminProducts = createAsyncThunk<
     IAdminProductsResponse,
     { page?: number; limit?: number; category?: string; search?: string },
@@ -55,7 +54,7 @@ export const fetchAdminProducts = createAsyncThunk<
     async (filters, { getState, rejectWithValue }) => {
         try {
             const token = getState().auth.token;
-            // Endpoint ini harus sesuai dengan yang Anda daftarkan di index.ts untuk product.admin.router.ts
+            // [DIPERBAIKI] Menggunakan URL endpoint yang benar dari router Anda: /api/products/katalog
             const response = await axios.get<IAdminProductsResponse>(`${process.env.NEXT_PUBLIC_API_URL}/product/katalog`, {
                 headers: { Authorization: `Bearer ${token}` },
                 params: filters,
