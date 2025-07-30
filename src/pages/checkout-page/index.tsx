@@ -16,7 +16,7 @@ interface ShippingOption {
   cost: number;
 }
 
-// Menggunakan 'export default function' sesuai standar Next.js App Router
+
 export default function CheckoutPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();

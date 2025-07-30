@@ -1,82 +1,82 @@
 'use client';
+
 import React from 'react';
-import { useRouter } from 'next/navigation';
-import { LayoutDashboardIcon, StoreIcon, UsersIcon, BarChart3Icon, LogOutIcon, PackageIcon, PercentCircleIcon, Layers, User, UserIcon, NotebookPenIcon } from 'lucide-react';
-import { logoutAction } from '@/lib/redux/slice/authSlice';
-import { useAppDispatch } from '@/lib/redux/hooks';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { 
+    LayoutDashboard,
+    ShoppingCart, 
+    Archive, 
+    TicketPercent, 
+    BarChart3, 
+    Book
+} from 'lucide-react';
+import { useAppSelector } from '@/lib/redux/hooks'; // 1. Impor hook Redux
 
-interface SidebarProps {
-  showMenu: boolean;
-  setShowMenu: (show: boolean) => void;
-}
+// --- Daftar Menu ---
+const menuItems = [
+    { id: 'dashboard', label: 'Dashboard', href: '/store-admin', icon: LayoutDashboard }, 
+    { id: 'orders', label: 'Pesanan', href: '/store-admin/pesanan', icon: ShoppingCart },
+    { id: 'inventory', label: 'Inventaris', href: '/store-admin/inventaris', icon: Archive },
+    { id: 'discounts', label: 'Diskon', href: '/store-admin/diskon', icon: TicketPercent },
+    { id: 'reports', label: 'Laporan', href: '/store-admin/reports', icon: BarChart3 },
+    { id: 'catalog', label: 'Katalog', href: '/store-admin/katalog', icon: Book },
+];
 
-export default function Sidebar({ showMenu, setShowMenu }: SidebarProps) {
-  const router = useRouter();
-  const dispatch = useAppDispatch();
+// --- Komponen Sidebar ---
+export default function AdminSidebar() {
+    const pathname = usePathname();
+    // 2. Ambil data profil dari profileSlice
+    const userProfile  = useAppSelector((state) => state.profile);
 
-  const navigation = [
-    { name: 'Dashboard', icon: LayoutDashboardIcon, id: 'dashboard', path: '/dashboard' },
-    { name: 'Order', icon: NotebookPenIcon, id: 'reports', path: '/order' },
-    { name: 'Store Management', icon: StoreIcon, id: 'stores', path: '/store' },
-    { name: 'Inventory', icon: PackageIcon, id: 'inventory', path: '/inventory' },
-    { name: 'Discount', icon: PercentCircleIcon, id: 'discount', path: '/discount' },
-    { name: 'Category', icon: Layers, id: 'category', path: '/category' },
-    { name: 'Admin Accounts', icon: UsersIcon, id: 'admins', path: '/admins' },
-    { name: 'Users Accounts', icon: UserIcon, id: 'users', path: '/users' },
-    { name: 'Reports', icon: BarChart3Icon, id: 'reports', path: '/reports' },
+    return (
+        <div className="flex flex-col h-full bg-white text-gray-800 border-r border-gray-200/60">
+            {/* Header Sidebar */}
+            <Link href="/store-admin" className="p-5 flex items-center gap-3 border-b border-gray-200/60 h-[68px] hover:bg-gray-50 transition-colors">
+                <div className="bg-gray-800 p-2.5 rounded-lg">
+                    <ShoppingCart size={20} className="text-white"/>
+                </div>
+                <h1 className="text-xl font-bold text-gray-800">FreshMart</h1>
+            </Link>
 
-  ];
+            {/* Menu Navigasi */}
+            <nav className="flex-1 px-4 py-4 space-y-1.5">
+                {menuItems.map((item) => {
+                    const isActive = pathname === item.href;
+                    
+                    return (
+                        <Link
+                            key={item.id}
+                            href={item.href}
+                            className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group ${
+                                isActive
+                                    ? 'bg-green-50 text-green-700'
+                                    : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+                            }`}
+                        >
+                            <item.icon className={`h-5 w-5 mr-3 transition-colors duration-200 ${isActive ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-600'}`} />
+                            <span className="flex-1 text-left">{item.label}</span>
+                            {isActive && <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>}
+                        </Link>
+                    );
+                })}
+            </nav>
 
-  const handleNavigation = (path: string) => {
-    setShowMenu(false); // Hide sidebar on mobile after navigation
-    router.push(path);
-  };
-
-  // 4. Buat fungsi logout yang bersih
-  const handleLogout = () => {
-    dispatch(logoutAction());
-    router.push('/');
-  };
-
-  return (
-    <div
-      className={`
-        fixed inset-y-0 left-0 z-30 w-64 transition-transform transform bg-green-700 pt-5 pb-4 overflow-y-auto
-        ${showMenu ? 'translate-x-0' : '-translate-x-full'}
-        md:static md:inset-auto md:translate-x-0
-      `}
-    >
-      <div className="flex items-center flex-shrink-0 px-4">
-        <h1 className="text-white font-bold text-xl">Freshmart Admin</h1>
-        {/* Close button for mobile */}
-        <button
-          className="md:hidden ml-auto text-white"
-          onClick={() => setShowMenu(false)}
-        >
-          ✕
-        </button>
-      </div>
-      <div className="mt-8 flex-1 flex flex-col">
-        <nav className="flex-1 px-2 space-y-1">
-          {navigation.map(item => (
-            <button
-              key={item.name}
-              className="group flex items-center w-full px-2 py-2 text-base md:text-sm font-medium rounded-md cursor-pointer text-left text-white hover:bg-green-800"
-              onClick={() => handleNavigation(item.path)}
-            >
-              <item.icon className="mr-3 flex-shrink-0 h-6 w-6" aria-hidden="true" /> {item.name}
-            </button>
-          ))}
-        </nav>
-      </div>
-      <div className="px-2 mt-6">
-        <button
-          onClick={handleLogout}
-          className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-full text-sm"
-        >
-          Sign Out
-        </button>
-      </div>
-    </div>
-  );
-}
+            {/* Footer Sidebar (Sekarang Dinamis dan Dapat Diklik) */}
+            <div className="p-4 border-t border-gray-200/60">
+                 <Link href="/profile" className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 transition-colors">
+                     {/* 3. Gunakan data profil dinamis dengan fallback */}
+                     <img 
+                        src={userProfile?.profilePicture || "https://i.pravatar.cc/40?u=admin"} 
+                        alt={userProfile?.fullName || "Admin"} 
+                        className="w-10 h-10 rounded-full object-cover" 
+                     />
+                     <div>
+                        <p className="text-sm font-semibold text-gray-800 truncate">{userProfile?.fullName || "Admin Toko"}</p>
+                        <p className="text-xs text-gray-500 truncate">{userProfile?.email || "Memuat data..."}</p>
+                     </div>
+                </Link>
+            </div>
+        </div>
+    );
+};

@@ -16,6 +16,10 @@ export default function ProfilePage() {
   const { isAuthenticated } = useAppSelector((state) => state.auth);
   const profile = useAppSelector((state) => state.profile);
 
+  // Ganti path user.role sesuai dengan struktur Redux-mu
+  const userRole =
+    profile?.role || profile?.role || null;
+
   useEffect(() => {
     if (isAuthenticated) {
       dispatch(fetchProfile());
@@ -45,6 +49,7 @@ export default function ProfilePage() {
           Account Settings
         </h1>
         <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar */}
           <aside className="lg:w-1/4">
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
               <nav className="divide-y divide-gray-200">
@@ -59,7 +64,6 @@ export default function ProfilePage() {
                   <User className="h-5 w-5 mr-3" />
                   Personal Information
                 </button>
-
                 <button
                   onClick={() => setActiveTab("security")}
                   className={`w-full flex items-center px-6 py-4 text-sm font-medium transition-colors ${
@@ -71,30 +75,35 @@ export default function ProfilePage() {
                   <Shield className="h-5 w-5 mr-3" />
                   Security
                 </button>
-
-                <button
-                  onClick={() => setActiveTab("addresses")}
-                  className={`w-full flex items-center px-6 py-4 text-sm font-medium transition-colors ${
-                    activeTab === "addresses"
-                      ? "bg-green-50 text-green-700 border-l-4 border-green-500"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }`}
-                >
-                  <MapPinIcon className="h-5 w-5 mr-3" />
-                  Addresses
-                </button>
+                {/* Tab Addresses hanya untuk BUKAN STORE_ADMIN */}
+                {userRole !== "STORE_ADMIN" && (
+                  <button
+                    onClick={() => setActiveTab("addresses")}
+                    className={`w-full flex items-center px-6 py-4 text-sm font-medium transition-colors ${
+                      activeTab === "addresses"
+                        ? "bg-green-50 text-green-700 border-l-4 border-green-500"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <MapPinIcon className="h-5 w-5 mr-3" />
+                    Addresses
+                  </button>
+                )}
               </nav>
             </div>
           </aside>
 
+          {/* Main content */}
           <main className="lg:w-3/4">
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-              {/* 4. Gunakan data 'profile' yang sudah di-fetch */}
               {activeTab === "personal" && (
                 <PersonalInformation user={profile} />
               )}
               {activeTab === "security" && <Security user={profile} />}
-              {activeTab === "addresses" && <AddressManagement />}
+              {/* Konten Address hanya untuk BUKAN STORE_ADMIN */}
+              {activeTab === "addresses" && userRole !== "STORE_ADMIN" && (
+                <AddressManagement />
+              )}
             </div>
           </main>
         </div>
