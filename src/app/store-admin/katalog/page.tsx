@@ -3,7 +3,7 @@
 import React, { useState, type FC, useEffect } from 'react';
 import { Search, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
-import { fetchAdminProducts } from '@/lib/redux/slice/storeadminproductSlice'; // Menggunakan slice admin yang baru
+import { fetchAdminProducts } from '@/lib/redux/slice/storeadminproductSlice';
 
 // --- Tipe Data dari Slice ---
 interface IAdminProduct {

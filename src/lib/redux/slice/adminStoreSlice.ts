@@ -1,18 +1,10 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
 import { apiUrl } from "@/pages/config";
-
-export interface IAdminStore {
-  id: number;
-  name: string;
-  address: string;
-  latitude: number;
-  longitude: number;
-  admins: { user: { fullName: string } }[];
-}
+import { Store } from "@/lib/interface/store.type";
 
 interface AdminStoreState {
-  stores: IAdminStore[];
+  stores: Store[];
   loading: boolean;
   error: string | null;
 }
@@ -23,6 +15,10 @@ const initialState: AdminStoreState = {
   error: null,
 };
 
+type CreateStorePayload = Omit<Store, "id">;
+
+type UpdateStorePayload = Partial<Omit<Store, "id">> & { id: number };
+
 export const fetchAllStores = createAsyncThunk(
   "adminStores/fetchAll",
   async (_, { rejectWithValue }) => {
@@ -31,7 +27,7 @@ export const fetchAllStores = createAsyncThunk(
       const response = await axios.get(`${apiUrl}/api/management/stores`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return response.data as IAdminStore[];
+      return response.data as Store[];
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || "Gagal mengambil data toko."
@@ -42,7 +38,7 @@ export const fetchAllStores = createAsyncThunk(
 
 export const createNewStore = createAsyncThunk(
   "adminStores/createNew",
-  async (storeData: { name: string; address: string }, { rejectWithValue }) => {
+  async (storeData: CreateStorePayload, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
@@ -52,7 +48,7 @@ export const createNewStore = createAsyncThunk(
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      return response.data as IAdminStore;
+      return response.data as Store;
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || "Gagal membuat toko baru."
@@ -63,10 +59,7 @@ export const createNewStore = createAsyncThunk(
 
 export const updateStore = createAsyncThunk(
   "adminStores/update",
-  async (
-    storeData: { id: number; name: string; address: string },
-    { rejectWithValue }
-  ) => {
+  async (storeData: UpdateStorePayload, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token");
       const { id, ...data } = storeData;
@@ -77,7 +70,7 @@ export const updateStore = createAsyncThunk(
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      return response.data as IAdminStore;
+      return response.data as Store;
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || "Gagal memperbarui toko."
@@ -129,7 +122,7 @@ const adminStoreSlice = createSlice({
           (store) => store.id === action.payload.id
         );
         if (index !== -1) {
-          state.stores[index] = action.payload;
+          state.stores[index] = { ...state.stores[index], ...action.payload };
         }
       })
       .addCase(deleteStore.fulfilled, (state, action) => {

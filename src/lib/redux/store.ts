@@ -13,6 +13,7 @@ import CategoryReducer from "./slice/categorySlice";
 import MarketReducer from "./slice/storeSlice";
 import adminrodersReducer from "./slice/adminorderslice";
 import adminProductreducer from "./slice/storeadminproductSlice";
+import StoreAdminDashboardreducer from "./slice/storeadminDashboardSlice";
 
 
 export const store = configureStore({
@@ -31,6 +32,7 @@ export const store = configureStore({
     Market: MarketReducer,
     adminorders: adminrodersReducer, 
     adminProducts: adminProductreducer,
+    storeAdminDashboard: StoreAdminDashboardreducer,
   },
 });
 
