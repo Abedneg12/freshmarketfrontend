@@ -394,7 +394,7 @@ const Navbar: React.FC = () => {
                       Your Profile
                     </Link>
                     <Link
-                      href="/orders"
+                      href="/order-history"
                       onClick={() => setIsProfileDropdownOpen(false)}
                       className="block px-4 py-2 text-sm hover:bg-gray-50 text-gray-700 transition"
                     >
