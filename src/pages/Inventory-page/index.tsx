@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ProductForm } from '../../components/product/ProductForm';
 import { PlusIcon, SearchIcon } from 'lucide-react';
 import { DataTable } from '@/components/common/DataTable';
-import { apiUrl} from '../config';
+import { apiUrl } from '../config';
 import { Product, StoreStock } from '../../lib/interface/product.type';
 import axios from 'axios';
 import { Category } from '@/lib/interface/category.type';

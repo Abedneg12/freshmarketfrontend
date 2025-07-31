@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { LayoutDashboardIcon, StoreIcon, UsersIcon, BarChart3Icon, LogOutIcon, PackageIcon, PercentCircleIcon, Layers, User, UserIcon, NotebookPenIcon } from 'lucide-react';
+import { LayoutDashboardIcon, StoreIcon, UsersIcon, BarChart3Icon, LogOutIcon, PackageIcon, PercentCircleIcon, Layers, User, UserIcon, NotebookPenIcon, PackagePlusIcon } from 'lucide-react';
 import { logoutAction } from '@/lib/redux/slice/authSlice';
 import { useAppDispatch } from '@/lib/redux/hooks';
 
@@ -19,6 +19,7 @@ export default function Sidebar({ showMenu, setShowMenu }: SidebarProps) {
     { name: 'Order', icon: NotebookPenIcon, id: 'reports', path: '/super-admin/order' },
     { name: 'Store Management', icon: StoreIcon, id: 'stores', path: '/super-admin/storeManagement' },
     { name: 'Inventory', icon: PackageIcon, id: 'inventory', path: '/super-admin/inventory' },
+    { name: 'Inventory Journal', icon: PackagePlusIcon, id: 'inventory', path: '/super-admin/inventory-journal' },
     { name: 'Category', icon: Layers, id: 'category', path: '/super-admin/category' },
     { name: 'Admin Accounts', icon: UsersIcon, id: 'admins', path: '/super-admin/admins' },
     { name: 'Users Accounts', icon: UserIcon, id: 'users', path: '/super-admin/users' },

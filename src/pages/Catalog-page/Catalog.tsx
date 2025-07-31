@@ -13,6 +13,7 @@ export default function CatalogPage() {
   const [searchTerm, setSearchTerm] = useState(searchParams?.get('search') || '');
   const [showFilters, setShowFilters] = useState(false);
   const [activeCategory, setActiveCategory] = useState(searchParams?.get('category') || 'all');
+  const [selectedMarkets, setSelectedMarkets] = useState<string[]>([]);
   const [selectedFilters, setSelectedFilters] = useState<{
     sortBy: string;
   }>({
@@ -33,7 +34,7 @@ export default function CatalogPage() {
       // Handle promo code
     }
   }, [searchParams]);
-  
+
   return <div className="bg-white text-gray-900">
     <div className="container mx-auto px-4 py-8">
       {/* Deals Header - Only show when deals=true */}
@@ -79,7 +80,15 @@ export default function CatalogPage() {
                 </li>)}
               </ul>
             </div>
-            <ProductFilters selectedFilters={selectedFilters} setSelectedFilters={setSelectedFilters} />
+            <ProductFilters
+              selectedFilters={selectedFilters}
+              setSelectedFilters={setSelectedFilters}
+              setActiveCategory={setActiveCategory}
+              selectedMarkets={selectedMarkets}
+              setSelectedMarkets={setSelectedMarkets}
+              markets={useAppSelector(state => state.Market.data)}
+            />
+
           </div>
         </div>}
         {/* Main content */}
@@ -90,17 +99,27 @@ export default function CatalogPage() {
               <input type="text" placeholder="Search products..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" />
               <SearchIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
             </div>}
-            <select className="py-3 px-4 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white" value={selectedFilters.sortBy} onChange={e => setSelectedFilters({
-              ...selectedFilters,
-              sortBy: e.target.value
-            })}>
-              <option value="discount">Biggest Discount</option>
+            <select
+              className="py-3 px-4 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+              value={selectedFilters.sortBy}
+              onChange={e => setSelectedFilters({
+                ...selectedFilters,
+                sortBy: e.target.value
+              })}
+            >
               <option value="price-asc">Price: Low to High</option>
               <option value="price-desc">Price: High to Low</option>
             </select>
           </div>
           {/* Products grid */}
-          <ProductGrid category={activeCategory} searchTerm={searchTerm} filters={selectedFilters} dealsOnly={searchParams?.get('deals') === 'true'} />
+          <ProductGrid
+            category={activeCategory}
+            searchTerm={searchTerm}
+            filters={selectedFilters}
+            dealsOnly={searchParams?.get('deals') === 'true'}
+            selectedMarkets={selectedMarkets}
+          />
+
         </div>
       </div>
     </div>
