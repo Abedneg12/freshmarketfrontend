@@ -72,8 +72,9 @@ export default function StoreManagementPage() {
     }
   };
 
+  // --- PERBAIKAN: akses window harus dicek (meskipun sudah aman di event handler) ---
   const handleDelete = async (storeId: number) => {
-    if (
+    if (typeof window !== "undefined" && 
       window.confirm(
         "Apakah Anda yakin ingin menghapus toko ini? Semua data terkait akan ikut terhapus."
       )
@@ -88,11 +89,14 @@ export default function StoreManagementPage() {
     }
   };
 
-  const filteredStores = stores.filter(
-    (store) =>
-      store.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      store.address.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // --- (optional: handle store null safety) ---
+  const filteredStores = Array.isArray(stores)
+    ? stores.filter(
+        (store) =>
+          store.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          store.address.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
 
   return (
     <div className="space-y-6">
