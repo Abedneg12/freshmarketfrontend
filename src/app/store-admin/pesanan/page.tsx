@@ -6,7 +6,7 @@ import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import { fetchAdminOrders } from '@/lib/redux/slice/adminorderslice';
 
 // --- Tipe Data dari Slice ---
-type OrderStatus = 'PROCESSED' | 'SHIPPED' | 'CONFIRMED' | 'CANCELED' | 'WAITING_CONFIRMATION';
+type OrderStatus = 'PROCESSED' | 'SHIPPED' | 'CONFIRMED' | 'CANCELED' | 'WAITING_CONFIRMATION' | 'WAITING_FOR_PAYMENT';
 
 // --- Komponen Badge Status (Tidak Berubah) ---
 const StatusBadge: FC<{ status: OrderStatus }> = ({ status }) => {
@@ -16,6 +16,7 @@ const StatusBadge: FC<{ status: OrderStatus }> = ({ status }) => {
         CONFIRMED: 'bg-green-100 text-green-700',
         CANCELED: 'bg-red-100 text-red-700',
         WAITING_CONFIRMATION: 'bg-yellow-100 text-yellow-700',
+        WAITING_FOR_PAYMENT: 'bg-gray-100 text-gray-700',
     };
     const statusText = {
         PROCESSED: 'Diproses',
@@ -23,6 +24,7 @@ const StatusBadge: FC<{ status: OrderStatus }> = ({ status }) => {
         CONFIRMED: 'Selesai',
         CANCELED: 'Dibatalkan',
         WAITING_CONFIRMATION: 'Menunggu Konfirmasi',
+        WAITING_FOR_PAYMENT: 'Menunggu Pembayaran',
     }
 
     return (
