@@ -26,7 +26,6 @@ export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCance
   const [endDate, setEndDate] = useState('');
 
   // Data for select inputs
-  const [stores, setStores] = useState<Market[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
@@ -37,12 +36,8 @@ export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCance
       setLoadingData(true);
       setDataError(null);
       try {
-        const [storesRes, productsRes] = await Promise.all([
-          axios.get(`${apiUrl}/stores/all`, { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get(`${apiUrl}/product`, { headers: { Authorization: `Bearer ${token}` } }),
-        ]);
-        setStores(storesRes.data as Market[]);
-        setProducts(productsRes.data as Product[]);
+        const productsRes = axios.get(`${apiUrl}/product`, { headers: { Authorization: `Bearer ${token}` } });
+        setProducts((await productsRes).data as Product[]);
       } catch (err: any) {
         console.error('Failed to fetch dropdown data:', err);
         setDataError('Failed to load stores or products.');
@@ -182,26 +177,6 @@ export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCance
               <option value="NOMINAL">Nominal</option>
             </select>
           </div>
-          {/* Store Select */}
-          <div>
-            <label htmlFor="storeId" className="block text-sm font-medium text-black">
-              Store
-            </label>
-            <select
-              id="storeId"
-              name="storeId"
-              value={selectedStoreId}
-              onChange={e => setSelectedStoreId(Number(e.target.value))}
-              className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-            >
-              <option value="">Select a store</option>
-              {stores.map(store => (
-                <option key={store.id} value={store.id}>
-                  {store.name}
-                </option>
-              ))}
-            </select>
-          </div>
           {/* Product Select */}
           {(discountType === 'BUY1GET1' || discountType === 'PERCENTAGE' || discountType === 'NOMINAL') && (
             <div>
@@ -213,7 +188,6 @@ export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCance
                 name="productId"
                 value={selectedProductId}
                 onChange={e => setSelectedProductId(Number(e.target.value))}
-                required
                 className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
               >
                 <option value="">Select a product</option>
