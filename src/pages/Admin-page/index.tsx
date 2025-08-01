@@ -17,7 +17,7 @@ export default function AdminsPage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [selectedStoreIds, setSelectedStoreIds] = useState<number[]>([]);
+  const [selectedStoreId, setSelectedStoreId] = useState<number | null>(null);
 
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [stores, setStores] = useState<Market[]>([]);
@@ -27,14 +27,16 @@ export default function AdminsPage() {
     if (editingAdmin) {
       setFullName(editingAdmin.fullName);
       setEmail(editingAdmin.email);
-      setPassword('');
-      setSelectedStoreIds(editingAdmin.StoreAdminAssignment.map(a => Number(a.storeId)));
-
+      setPassword(''); setSelectedStoreId(
+        editingAdmin.StoreAdminAssignment?.storeId
+          ? parseInt(editingAdmin.StoreAdminAssignment.storeId)
+          : null
+      );
     } else {
       setFullName('');
       setEmail('');
       setPassword('');
-      setSelectedStoreIds([]);
+      setSelectedStoreId(null);
     }
   }, [editingAdmin]);
 
@@ -73,7 +75,7 @@ export default function AdminsPage() {
       fullName,
       email,
       ...(password && { password }),
-      storeIds: selectedStoreIds,
+      storeId: selectedStoreId ?? undefined,
     };
 
     try {
@@ -111,12 +113,10 @@ export default function AdminsPage() {
     { label: 'Email', accessor: 'email' },
     { label: 'Role', accessor: 'role' },
     {
-      label: 'Stores',
+      label: 'Store',
       accessor: 'StoreAdminAssignment',
       render: (admin: Admin) =>
-        admin.StoreAdminAssignment && admin.StoreAdminAssignment.length > 0
-          ? admin.StoreAdminAssignment.map((assignment: StoreAdminAssignment) => assignment.store.name).join(', ')
-          : 'N/A'
+        admin.StoreAdminAssignment?.store?.name ?? 'N/A'
     },
     {
       label: 'Status',
@@ -220,8 +220,8 @@ export default function AdminsPage() {
                   name="email"
                   id="email"
                   required
-                  className="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"
                   readOnly={!!editingAdmin}
+                  className="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"
                 />
               </div>
               <div>
@@ -239,32 +239,25 @@ export default function AdminsPage() {
                 />
               </div>
               <div>
-                <label htmlFor="stores" className="block text-sm font-medium text-black">
-                  Assigned Stores
+                <label htmlFor="store" className="block text-sm font-medium text-black">
+                  Assigned Store
                 </label>
                 <select
-                  id="stores"
-                  name="stores"
-                  multiple
-                  value={selectedStoreIds.map(String)}
+                  id="store"
+                  name="store"
+                  value={selectedStoreId?.toString() || ''}
                   onChange={(e) =>
-                    setSelectedStoreIds(
-                      Array.from(e.target.selectedOptions, (option) =>
-                        parseInt(option.value)
-                      )
-                    )
+                    setSelectedStoreId(e.target.value ? parseInt(e.target.value) : null)
                   }
-                  className="text-black mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm h-48"
+                  className="text-black mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
                 >
+                  <option value="">-- Select a store --</option>
                   {stores.map((store) => (
                     <option key={store.id} value={store.id}>
                       {store.name}
                     </option>
                   ))}
                 </select>
-                <p className="mt-1 text-xs text-gray-500">
-                  Hold Ctrl/Cmd to select multiple stores
-                </p>
               </div>
             </div>
             <div className="mt-6 flex justify-end">

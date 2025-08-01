@@ -11,24 +11,55 @@ type OrderStatus = 'PROCESSED' | 'SHIPPED' | 'CONFIRMED' | 'CANCELED' | 'WAITING
 // --- Komponen Badge Status (Tidak Berubah) ---
 const StatusBadge: FC<{ status: OrderStatus }> = ({ status }) => {
     const statusStyles = {
-        PROCESSED: 'bg-blue-100 text-blue-700',
-        SHIPPED: 'bg-purple-100 text-purple-700',
-        CONFIRMED: 'bg-green-100 text-green-700',
-        CANCELED: 'bg-red-100 text-red-700',
-        WAITING_CONFIRMATION: 'bg-yellow-100 text-yellow-700',
+        PROCESSED: {
+            text: 'text-blue-700',
+            bg: 'bg-blue-100',
+            dot: 'bg-blue-400',
+        },
+        SHIPPED: {
+            text: 'text-purple-700',
+            bg: 'bg-purple-100',
+            dot: 'bg-purple-400',
+        },
+        CONFIRMED: {
+            text: 'text-green-700',
+            bg: 'bg-green-100',
+            dot: 'bg-green-400',
+        },
+        CANCELED: {
+            text: 'text-red-700',
+            bg: 'bg-red-100',
+            dot: 'bg-red-400',
+        },
+        WAITING_CONFIRMATION: {
+            text: 'text-yellow-700',
+            bg: 'bg-yellow-100',
+            dot: 'bg-yellow-400',
+        },
     };
+
     const statusText = {
         PROCESSED: 'Diproses',
         SHIPPED: 'Dikirim',
         CONFIRMED: 'Selesai',
         CANCELED: 'Dibatalkan',
         WAITING_CONFIRMATION: 'Menunggu Konfirmasi',
+    };
+
+    const style = statusStyles[status] ?? {
+        text: 'text-gray-700',
+        bg: 'bg-gray-100',
+        dot: 'bg-gray-400',
+    };
+
+    if (!statusStyles[status]) {
+        console.warn('Unknown status:', status);
     }
 
     return (
-        <span className={`px-2.5 py-1 text-xs font-medium rounded-full inline-flex items-center ${statusStyles[status]}`}>
-            <span className={`w-2 h-2 mr-2 rounded-full ${statusStyles[status].replace('100', '400').replace('text-','bg-')}`}></span>
-            {statusText[status]}
+        <span className={`px-2.5 py-1 text-xs font-medium rounded-full inline-flex items-center ${style.bg} ${style.text}`}>
+            <span className={`w-2 h-2 mr-2 rounded-full ${style.dot}`}></span>
+            {statusText[status] ?? status}
         </span>
     );
 };

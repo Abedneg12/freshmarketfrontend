@@ -3,7 +3,7 @@ export interface Admin {
   fullName: string;
   email: string;
   role: string;
-  StoreAdminAssignment: StoreAdminAssignment[];
+  StoreAdminAssignment: StoreAdminAssignment;
   isVerified: boolean;
   addresses: string[];
 }
