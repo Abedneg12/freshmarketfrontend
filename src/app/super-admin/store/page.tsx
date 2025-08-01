@@ -1,4 +1,4 @@
-import StoreManagementPage from "@/pages/store-management";
+import StoreManagementPage from "@/pages/store-management-page";
 import { Suspense } from "react";
 
 export default function Stores() {
