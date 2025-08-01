@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ReportFilters } from '../Dashboard-page/components/ReportFilters'; // Adjust path if needed
-import { ReportChart } from '../Dashboard-page/components/ReportChart'; // Adjust path if needed
+import { ReportFilters } from '@/components/reports/ReportFilters';
+import { ReportChart } from '@/components/reports/ReportChart';
 import axios from 'axios';
 import { apiUrl} from '../config'; // Assuming config is in the parent directory
 import { useAppSelector } from '@/lib/redux/hooks';
@@ -43,7 +43,7 @@ export default function ReportsPage() {
 
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [categoryData, setCategoryData] = useState<any[]>([]);
-  const [productData, setProductData] = useState<any[]>([]); // For store comparison/product performance
+  const [productData, setProductData] = useState<any[]>([]);
   const [tableData, setTableData] = useState<any[]>([]);
 
   const [loading, setLoading] = useState(true);
@@ -202,9 +202,6 @@ export default function ReportsPage() {
               <h3 className="text-lg leading-6 font-medium text-gray-900">
                 Sales Data by Category
               </h3>
-              <button type="button" className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                Export CSV
-              </button>
             </div>
             <div className="border-t border-gray-200 px-4 py-5 sm:p-0">
               <div className="overflow-x-auto">

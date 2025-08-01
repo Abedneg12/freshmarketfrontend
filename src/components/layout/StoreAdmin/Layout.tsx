@@ -65,7 +65,7 @@
 import React, { useState, useEffect, type FC } from 'react';
 import { useRouter } from 'next/navigation';
 import { Menu, Bell, LogOut, ShoppingCart, CheckCircle2, Truck, XCircle } from 'lucide-react';
-import AdminSidebar from '@/components/layout/StoreAdmin/sidebar'; 
+import AdminSidebar from '@/components/layout/StoreAdmin/Sidebar'; 
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import { fetchRecentActivity } from '@/lib/redux/slice/storeadminDashboardSlice';
 import { logoutAction } from '@/lib/redux/slice/authSlice';
