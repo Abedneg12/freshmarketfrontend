@@ -1,6 +1,4 @@
 "use client";
-
-
 import StoreManagementPage from "@/pages/Store-Management-page";
 import { Suspense } from "react";
 
