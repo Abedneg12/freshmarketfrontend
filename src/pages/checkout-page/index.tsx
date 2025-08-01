@@ -6,16 +6,6 @@ import { fetchCartItems } from "@/lib/redux/slice/cartSlice";
 import { fetchAddresses } from "@/lib/redux/slice/addressSlice";
 import { createOrder, resetOrderStatus } from "@/lib/redux/slice/orderSlice";
 import { CreditCardIcon, TruckIcon } from "lucide-react";
-import { apiUrl } from "../config";
-import axios from "axios";
-import { LoaderIcon } from "lucide-react";
-
-interface ShippingOption {
-  service: string;
-  description: string;
-  cost: number;
-}
-
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -28,10 +18,6 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<
     "BANK_TRANSFER" | "MIDTRANS"
   >("BANK_TRANSFER");
-  const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
-  const [selectedShipping, setSelectedShipping] =
-    useState<ShippingOption | null>(null);
-  const [shippingLoading, setShippingLoading] = useState(false);
 
   // Ambil data yang relevan dari Redux store
   const { carts } = useAppSelector((state) => state.cart);
@@ -54,48 +40,6 @@ export default function CheckoutPage() {
       setSelectedAddressId(mainAddress ? mainAddress.id : addresses[0].id);
     }
   }, [addresses]);
-
-  // pemanggilan API ongkir
-  useEffect(() => {
-    if (selectedAddressId) {
-      const fetchShippingCost = async () => {
-        setShippingLoading(true);
-        setShippingOptions([]);
-        setSelectedShipping(null);
-
-        try {
-          const token = localStorage.getItem("token");
-          const storeId = carts.length > 0 ? carts[0].storeId : null;
-
-          if (!storeId) {
-            console.error("Store ID tidak ditemukan untuk menghitung ongkir.");
-            setShippingLoading(false);
-            return;
-          }
-
-          const response = await axios.post(
-            `${apiUrl}/api/shipping/cost`,
-            { storeId, userAddressId: selectedAddressId },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-
-          const validOptions = (response.data as ShippingOption[]).filter(
-            (opt: ShippingOption) => opt.cost !== -1
-          );
-          setShippingOptions(validOptions);
-
-          if (validOptions.length > 0) {
-            setSelectedShipping(validOptions[0]);
-          }
-        } catch (error) {
-          console.error("Gagal mengambil ongkos kirim:", error);
-        } finally {
-          setShippingLoading(false);
-        }
-      };
-      fetchShippingCost();
-    }
-  }, [selectedAddressId, carts]);
 
   // Kalkulasi subtotal dari semua item di keranjang
   const subtotal = useMemo(() => {
@@ -203,47 +147,6 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Tampilan Ongkir */}
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <h2 className="text-xl font-semibold mb-4 text-gray-800">
-                Metode Pengiriman
-              </h2>
-              {shippingLoading ? (
-                <div className="flex items-center gap-2 text-gray-500">
-                  <LoaderIcon className="animate-spin h-5 w-5" />
-                  <span>Menghitung ongkos kirim...</span>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {shippingOptions.length > 0 ? (
-                    shippingOptions.map((option, index) => (
-                      <div
-                        key={index}
-                        onClick={() => setSelectedShipping(option)}
-                        className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                          selectedShipping?.service === option.service
-                            ? "border-green-500 ring-2 ring-green-200"
-                            : "border-gray-200"
-                        }`}
-                      >
-                        <p className="font-bold text-gray-800">
-                          {option.service} - Rp{" "}
-                          {option.cost.toLocaleString("id-ID")}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {option.description}
-                        </p>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-gray-500">
-                      Pilih alamat untuk melihat opsi pengiriman.
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-
             {/* Pilihan Pembayaran */}
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <h2 className="text-xl font-semibold mb-4 text-gray-800">
@@ -321,14 +224,10 @@ export default function CheckoutPage() {
                     Rp {subtotal.toLocaleString("id-ID")}
                   </span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Shipping</span>
-                  <span className="text-gray-800">Calculated by system</span>
-                </div>
               </div>
               <div className="border-t my-4"></div>
               <div className="flex justify-between font-bold text-lg">
-                <span>Total (approx.)</span>
+                <span>Total</span>
                 <span>Rp {subtotal.toLocaleString("id-ID")}</span>
               </div>
               <button
