@@ -3,6 +3,7 @@ import { DataTable } from '@/components/common/DataTable';
 import { apiUrl } from '../config';
 import axios from 'axios';
 import { useAppSelector } from '@/lib/redux/hooks';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 interface InventoryJournal {
   id: number;
@@ -24,7 +25,7 @@ interface InventoryJournal {
 export default function InventoryJournalPage() {
   const { token } = useAppSelector((state) => state.auth);
   const [journalEntries, setJournalEntries] = useState<InventoryJournal[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setLoading] = useState(true);
 
   const fetchJournal = async () => {
     setLoading(true);
@@ -117,8 +118,8 @@ export default function InventoryJournalPage() {
           </p>
         </div>
       </div>
-      {loading ? (
-        <p>Loading...</p>
+      {isLoading ? (
+        <LoadingSpinner />
       ) : (
         <DataTable
           columns={columns}

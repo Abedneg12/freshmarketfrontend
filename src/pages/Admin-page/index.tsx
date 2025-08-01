@@ -5,6 +5,7 @@ import axios from 'axios';
 import { DataTable } from '@/components/common/DataTable';
 import { Market } from '@/lib/interface/market';
 import { useAppSelector } from '@/lib/redux/hooks';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { Admin, StoreAdminAssignment } from '@/lib/interface/admins.type';
 
 export default function AdminsPage() {
@@ -20,6 +21,7 @@ export default function AdminsPage() {
 
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [stores, setStores] = useState<Market[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (editingAdmin) {
@@ -127,6 +129,7 @@ export default function AdminsPage() {
   ];
 
   const fetchAdmins = async () => {
+    setIsLoading(true);
     try {
       const res = await axios.get<Admin[]>(
         `${apiUrl}/super-admin/users`,
@@ -140,6 +143,8 @@ export default function AdminsPage() {
     } catch (error) {
       console.error('Failed to fetch admins:', error);
       setAdmins([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -279,6 +284,8 @@ export default function AdminsPage() {
             </div>
           </form>
         </div>
+      ) : isLoading ? (
+        <LoadingSpinner />
       ) : (
         <>
           <div>

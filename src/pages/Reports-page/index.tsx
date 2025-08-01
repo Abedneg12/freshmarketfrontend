@@ -75,7 +75,7 @@ export default function ReportsPage() {
       try {
         // Fetch Monthly Sales Report
         const monthlySalesRes = await axios.get<MonthlyReportDataItem[]>(
-          `${apiUrl}/reports/monthly-sales`,
+          `${apiUrl}/sales/monthly-sales`,
           { headers, params }
         );
         const fetchedMonthlyData = monthlySalesRes.data;
@@ -87,12 +87,11 @@ export default function ReportsPage() {
           orders: item.stores.reduce((sum, store) => sum + store.totalSales, 0) > 0 ? 1 : 0, // Placeholder for orders, as API doesn't provide count
         })).sort((a,b) => new Date(`2000-${a.name}-01`).getTime() - new Date(`2000-${b.name}-01`).getTime()); // Sort by month
 
-
         setMonthlyData(chartMonthlyData);
 
         // Fetch Monthly Sales by Category Report
         const categorySalesRes = await axios.get<MonthlySalesByCategoryReport[]>(
-          `${apiUrl}/reports/monthly-sales-by-category`,
+          `${apiUrl}/sales/monthly-sales-by-category`,
           { headers, params }
         );
         const fetchedCategoryData = categorySalesRes.data;
@@ -117,7 +116,7 @@ export default function ReportsPage() {
 
         // Fetch Monthly Sales by Product Report
         const productSalesRes = await axios.get<MonthlySalesByProductReport[]>(
-          `${apiUrl}/reports/monthly-sales-by-product`,
+          `${apiUrl}/sales/monthly-sales-by-product`,
           { headers, params }
         );
         const fetchedProductData = productSalesRes.data;
@@ -139,7 +138,6 @@ export default function ReportsPage() {
             orders: data.orders,
         })).sort((a,b) => b.revenue - a.revenue); // Sort by revenue desc
         setProductData(chartProductData);
-
 
         // Transform data for Sales Data Table (flattened monthly category sales)
         const tableRows: any[] = [];
@@ -196,7 +194,6 @@ export default function ReportsPage() {
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 ">
             <ReportChart data={monthlyData} type="line" title="Monthly Performance" />
             <ReportChart data={categoryData} type="bar" title="Category Performance" />
-            {/* Using Product Data for "Product Performance" chart as store comparison is complex without specific API */}
             <ReportChart data={productData} type="bar" title="Product Performance" />
           </div>
 

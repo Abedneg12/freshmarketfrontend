@@ -9,6 +9,7 @@ import { fetchProfile } from "@/lib/redux/slice/profileSlice";
 import StoreAdminLayout from "./StoreAdmin/Layout";
 import { loginAction } from "@/lib/redux/slice/authSlice";
 import { getUserFromToken } from "@/utils/auth";
+import { useRouter, usePathname } from "next/navigation";
 
 export default function ConditionalLayout({
   children,
@@ -19,6 +20,7 @@ export default function ConditionalLayout({
     (state) => state.auth
   );
   const dispatch = useAppDispatch();
+  const router = useRouter();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -35,16 +37,21 @@ export default function ConditionalLayout({
 
     if (isAuthenticated) {
       dispatch(fetchProfile());
+      // if (user) {
+      //   if (user.role === "SUPER_ADMIN") {
+      //     router.replace("/super-admin/dashboard");
+      //   } else if (user.role === "STORE_ADMIN") {
+      //     router.replace("/store-admin/dashboard");
+      //   }
+      // } 
     }
   }, [dispatch, isAuthenticated]);
 
-  console.log("user", user);
   if (user?.role == "SUPER_ADMIN") {
     return <SuperAdminDashboard>{children}</SuperAdminDashboard>;
   } else if (isAuthenticated && user?.role === "STORE_ADMIN") {
     return <StoreAdminLayout>{children}</StoreAdminLayout>;
   } else {
-    console.log(user);
     return (
       <>
         <Navbar />

@@ -3,14 +3,15 @@ import { SearchIcon } from 'lucide-react';
 import { apiUrl } from '../config';
 import axios from 'axios';
 import { DataTable } from '@/components/common/DataTable';
-import { Market } from '@/lib/interface/market';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { Admin } from '@/lib/interface/admins.type';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 export default function UsersPage() {
   const { token } = useAppSelector((state) => state.auth);
   const [searchQuery, setSearchQuery] = useState('');
   const [admins, setAdmins] = useState<Admin[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const columns = [
     { label: 'Name', accessor: 'fullName' },
@@ -26,6 +27,7 @@ export default function UsersPage() {
   ];
 
   const fetchAdmins = async () => {
+    setIsLoading(true);
     try {
       const res = await axios.get<Admin[]>(
         `${apiUrl}/super-admin/users`,
@@ -39,12 +41,16 @@ export default function UsersPage() {
     } catch (error) {
       console.error('Failed to fetch admins:', error);
       setAdmins([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAdmins();
-  }, []);
+    if (token) {
+      fetchAdmins();
+    }
+  }, [token]);
 
   return (
     <div className="space-y-6">
@@ -58,10 +64,13 @@ export default function UsersPage() {
           </p>
         </div>
       </div>
+      {isLoading ? (
+        <LoadingSpinner />
+      ) : (
         <>
           <div>
             <label htmlFor="search" className="sr-only">
-              Search Admins
+              Search Users
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -74,7 +83,7 @@ export default function UsersPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="text-black focus:ring-green-500 focus:border-green-500 block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 sm:text-sm"
-                placeholder="Search Admin"
+                placeholder="Search User"
               />
             </div>
           </div>
@@ -89,6 +98,7 @@ export default function UsersPage() {
             }
           />
         </>
+      )}
     </div>
   );
 }

@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { ProductForm } from '../../components/product/ProductForm';
-import { PlusIcon, SearchIcon } from 'lucide-react';
+import { PlusIcon} from 'lucide-react';
 import { DataTable } from '@/components/common/DataTable';
 import { apiUrl } from '../config';
 import { Product, StoreStock } from '../../lib/interface/product.type';
 import axios from 'axios';
-import { Category } from '@/lib/interface/category.type';
 import { useAppSelector } from '@/lib/redux/hooks';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 export default function InventoryPage() {
   const { token } = useAppSelector((state) => state.auth);
@@ -14,7 +14,8 @@ export default function InventoryPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(''); 
+  const [isLoading, setIsLoading] = useState(true);
 
   const handleAddProduct = () => {
     setIsEditing(false);
@@ -148,6 +149,7 @@ export default function InventoryPage() {
   const [products, setProducts] = useState<Product[]>([]);
 
   const fetchProducts = async () => {
+    setIsLoading(true);
     try {
       const res = await axios.get(
         `${apiUrl}/product`,
@@ -162,6 +164,8 @@ export default function InventoryPage() {
       alert('Failed to fetch Products');
       console.error('Failed to fetch Products:', error);
       setProducts([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -248,6 +252,8 @@ export default function InventoryPage() {
           isEditing={isEditing}
           editingProduct={editingProduct}
         />
+      ) : isLoading ? (
+        <LoadingSpinner />
       ) : (
         <DataTable
           columns={columns}

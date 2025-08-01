@@ -1,8 +1,10 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+
 interface ChartData {
   name: string;
-  [key: string]: string | number;
+  revenue: number;
+  orders: number;
 }
 interface ReportChartProps {
   data: ChartData[];
