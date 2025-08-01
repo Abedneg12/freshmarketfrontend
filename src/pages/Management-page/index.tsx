@@ -25,6 +25,9 @@ export default function StoreManagementPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
+  // Untuk modal konfirmasi
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+
   useEffect(() => {
     dispatch(fetchAllStores({ page: currentPage }));
   }, [dispatch, currentPage]);
@@ -72,24 +75,27 @@ export default function StoreManagementPage() {
     }
   };
 
-  // --- PERBAIKAN: akses window harus dicek (meskipun sudah aman di event handler) ---
-  const handleDelete = async (storeId: number) => {
-    if (typeof window !== "undefined" && 
-      window.confirm(
-        "Apakah Anda yakin ingin menghapus toko ini? Semua data terkait akan ikut terhapus."
-      )
-    ) {
-      try {
-        await dispatch(deleteStore(storeId)).unwrap();
-        toast.success("Store deleted successfully!");
-        dispatch(fetchAllStores({ page: currentPage }));
-      } catch (err: any) {
-        toast.error(err.message || "Failed to delete store.");
-      }
+  // --- NEW: trigger open modal, no window!
+  const handleDelete = (storeId: number) => {
+    setDeleteTarget(storeId);
+  };
+
+  // --- NEW: confirm delete
+  const confirmDelete = async () => {
+    if (deleteTarget === null) return;
+    try {
+      await dispatch(deleteStore(deleteTarget)).unwrap();
+      toast.success("Store deleted successfully!");
+      dispatch(fetchAllStores({ page: currentPage }));
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete store.");
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
-  // --- (optional: handle store null safety) ---
+  const cancelDelete = () => setDeleteTarget(null);
+
   const filteredStores = Array.isArray(stores)
     ? stores.filter(
         (store) =>
@@ -123,6 +129,32 @@ export default function StoreManagementPage() {
 
       {error && !loading && <p className="text-red-500 text-center">{error}</p>}
 
+      {/* MODAL KONFIRMASI */}
+      {deleteTarget !== null && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full">
+            <h2 className="text-lg font-semibold mb-2">Konfirmasi Hapus</h2>
+            <p className="mb-4 text-gray-700">
+              Apakah Anda yakin ingin menghapus toko ini? Semua data terkait akan ikut terhapus.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={cancelDelete}
+                className="px-3 py-1 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-3 py-1 rounded-md bg-red-600 text-white hover:bg-red-700"
+              >
+                Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showForm ? (
         <StoreForm
           store={editingStore}
@@ -155,7 +187,7 @@ export default function StoreManagementPage() {
               <StoreTable
                 stores={filteredStores}
                 onEdit={handleEditClick}
-                onDelete={handleDelete}
+                onDelete={handleDelete} // sudah diganti trigger modal!
               />
               <PaginationControls
                 currentPage={currentPage}
