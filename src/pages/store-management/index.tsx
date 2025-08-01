@@ -8,9 +8,9 @@ import {
   deleteStore,
 } from "@/lib/redux/slice/adminStoreSlice";
 import { PlusIcon, SearchIcon, LoaderIcon } from "lucide-react";
-import StoreTable from "./components/StoreTable";
-import StoreForm from "./components/StoreForm";
-import PaginationControls from "./components/PaginationControls";
+import StoreTable from "@/components/market/StoreTable";
+import StoreForm from "@/components/market/StoreForm";
+import PaginationControls from "@/components/market/PaginationControls";
 import { Store } from "@/lib/interface/store.type";
 import { toast } from "sonner";
 
