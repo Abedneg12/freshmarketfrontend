@@ -10,21 +10,28 @@ import {
 import { PlusIcon, SearchIcon, LoaderIcon } from "lucide-react";
 import StoreTable from "./components/StoreTable";
 import StoreForm from "./components/StoreForm";
+import PaginationControls from "./components/PaginationControls";
 import { Store } from "@/lib/interface/store.type";
+import { toast } from "sonner";
 
 export default function StoreManagementPage() {
   const dispatch = useAppDispatch();
-  const { stores, loading, error } = useAppSelector(
+  const { stores, loading, error, currentPage, totalPages } = useAppSelector(
     (state) => state.adminStores
   );
 
   const [showForm, setShowForm] = useState(false);
   const [editingStore, setEditingStore] = useState<Store | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchAllStores());
-  }, [dispatch]);
+    dispatch(fetchAllStores({ page: currentPage }));
+  }, [dispatch, currentPage]);
+
+  const handlePageChange = (page: number) => {
+    dispatch(fetchAllStores({ page }));
+  };
 
   const handleAddClick = () => {
     setEditingStore(null);
@@ -42,17 +49,27 @@ export default function StoreManagementPage() {
   };
 
   const handleSave = async (data: Partial<Store>) => {
-    if (editingStore) {
-      await dispatch(updateStore({ id: editingStore.id, ...data }));
-    } else {
-      if (data.name && data.address && data.city) {
-        await dispatch(createNewStore(data as Omit<Store, "id">));
+    setIsSaving(true);
+    try {
+      if (editingStore) {
+        await dispatch(updateStore({ id: editingStore.id, ...data })).unwrap();
+        toast.success("Store updated successfully!");
       } else {
-        console.error("Data tidak lengkap untuk membuat toko baru");
+        if (data.name && data.address && data.city) {
+          await dispatch(createNewStore(data as Omit<Store, "id">)).unwrap();
+          toast.success("Store created successfully!");
+        } else {
+          throw new Error("Data tidak lengkap untuk membuat toko baru");
+        }
       }
+      setShowForm(false);
+      setEditingStore(null);
+      dispatch(fetchAllStores({ page: 1 }));
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save store.");
+    } finally {
+      setIsSaving(false);
     }
-    setShowForm(false);
-    setEditingStore(null);
   };
 
   const handleDelete = async (storeId: number) => {
@@ -61,7 +78,13 @@ export default function StoreManagementPage() {
         "Apakah Anda yakin ingin menghapus toko ini? Semua data terkait akan ikut terhapus."
       )
     ) {
-      await dispatch(deleteStore(storeId));
+      try {
+        await dispatch(deleteStore(storeId)).unwrap();
+        toast.success("Store deleted successfully!");
+        dispatch(fetchAllStores({ page: currentPage }));
+      } catch (err: any) {
+        toast.error(err.message || "Failed to delete store.");
+      }
     }
   };
 
@@ -72,7 +95,7 @@ export default function StoreManagementPage() {
   );
 
   return (
-    <div className="space-y-6 text-gray-900">
+    <div className="space-y-6">
       <div className="md:flex md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">
@@ -94,14 +117,14 @@ export default function StoreManagementPage() {
         )}
       </div>
 
-      {error && <p className="text-red-500 text-center">{error}</p>}
+      {error && !loading && <p className="text-red-500 text-center">{error}</p>}
 
       {showForm ? (
         <StoreForm
           store={editingStore}
           onSave={handleSave}
           onCancel={handleCancel}
-          isLoading={loading}
+          isLoading={isSaving}
         />
       ) : (
         <>
@@ -124,11 +147,18 @@ export default function StoreManagementPage() {
               <LoaderIcon className="h-8 w-8 animate-spin text-green-600" />
             </div>
           ) : (
-            <StoreTable
-              stores={filteredStores}
-              onEdit={handleEditClick}
-              onDelete={handleDelete}
-            />
+            <>
+              <StoreTable
+                stores={filteredStores}
+                onEdit={handleEditClick}
+                onDelete={handleDelete}
+              />
+              <PaginationControls
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </>
           )}
         </>
       )}

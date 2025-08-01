@@ -1,97 +1,108 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
-import { apiUrl } from "@/pages/config";
 import { Store } from "@/lib/interface/store.type";
 
-interface AdminStoreState {
+const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+interface PaginatedStoresResponse {
+  data: Store[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalStores: number;
+  };
+}
+
+interface AdminStoresState {
   stores: Store[];
   loading: boolean;
   error: string | null;
+  currentPage: number;
+  totalPages: number;
+  totalStores: number;
 }
 
-const initialState: AdminStoreState = {
+const initialState: AdminStoresState = {
   stores: [],
   loading: false,
   error: null,
+  currentPage: 1,
+  totalPages: 1,
+  totalStores: 0,
 };
 
-type CreateStorePayload = Omit<Store, "id">;
-
-type UpdateStorePayload = Partial<Omit<Store, "id">> & { id: number };
-
-export const fetchAllStores = createAsyncThunk(
-  "adminStores/fetchAll",
-  async (_, { rejectWithValue }) => {
+export const fetchAllStores = createAsyncThunk<
+  PaginatedStoresResponse,
+  { page?: number; limit?: number }
+>(
+  "adminStores/fetchAllStores",
+  async ({ page = 1, limit = 5 }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(`${apiUrl}/api/management/stores`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return response.data as Store[];
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Gagal mengambil data toko."
+      const response = await axios.get<PaginatedStoresResponse>(
+        `${apiUrl}/api/management/stores`,
+        {
+          params: { page, limit },
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
+      return response.data;
+    } catch (err: any) {
+      return rejectWithValue(err.response.data);
     }
   }
 );
 
-export const createNewStore = createAsyncThunk(
-  "adminStores/createNew",
-  async (storeData: CreateStorePayload, { rejectWithValue }) => {
+export const createNewStore = createAsyncThunk<Store, Omit<Store, "id">>(
+  "adminStores/createNewStore",
+  async (storeData, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.post(
+      const response = await axios.post<Store>(
         `${apiUrl}/api/management/stores`,
         storeData,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      return response.data as Store;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Gagal membuat toko baru."
-      );
+      return response.data;
+    } catch (err: any) {
+      return rejectWithValue(err.response.data);
     }
   }
 );
 
-export const updateStore = createAsyncThunk(
-  "adminStores/update",
-  async (storeData: UpdateStorePayload, { rejectWithValue }) => {
-    try {
-      const token = localStorage.getItem("token");
-      const { id, ...data } = storeData;
-      const response = await axios.put(
-        `${apiUrl}/api/management/stores/${id}`,
-        data,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      return response.data as Store;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Gagal memperbarui toko."
-      );
-    }
+export const updateStore = createAsyncThunk<
+  Store,
+  Partial<Store> & { id: number }
+>("adminStores/updateStore", async (storeData, { rejectWithValue }) => {
+  try {
+    const token = localStorage.getItem("token");
+    const { id, ...data } = storeData;
+    const response = await axios.put<Store>(
+      `${apiUrl}/api/management/stores/${id}`,
+      data,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    return response.data;
+  } catch (err: any) {
+    return rejectWithValue(err.response.data);
   }
-);
+});
 
-export const deleteStore = createAsyncThunk(
-  "adminStores/delete",
-  async (storeId: number, { rejectWithValue }) => {
+export const deleteStore = createAsyncThunk<number, number>(
+  "adminStores/deleteStore",
+  async (storeId, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token");
       await axios.delete(`${apiUrl}/api/management/stores/${storeId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return storeId; // Kembalikan ID toko yang dihapus
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Gagal menghapus toko."
-      );
+      return storeId;
+    } catch (err: any) {
+      return rejectWithValue(err.response.data);
     }
   }
 );
@@ -108,51 +119,29 @@ const adminStoreSlice = createSlice({
       })
       .addCase(fetchAllStores.fulfilled, (state, action) => {
         state.loading = false;
-        state.stores = action.payload;
+        state.stores = action.payload.data;
+        state.currentPage = action.payload.pagination.currentPage;
+        state.totalPages = action.payload.pagination.totalPages;
+        state.totalStores = action.payload.pagination.totalStores;
       })
       .addCase(fetchAllStores.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload as string;
+        state.error =
+          (action.payload as any)?.message || "Gagal mengambil data toko.";
       })
-      .addCase(createNewStore.fulfilled, (state, action) => {
-        state.stores.push(action.payload);
-      })
-      .addCase(updateStore.fulfilled, (state, action) => {
-        const index = state.stores.findIndex(
-          (store) => store.id === action.payload.id
-        );
-        if (index !== -1) {
-          state.stores[index] = { ...state.stores[index], ...action.payload };
-        }
-      })
-      .addCase(deleteStore.fulfilled, (state, action) => {
-        state.stores = state.stores.filter(
-          (store) => store.id !== action.payload
-        );
-      })
-      .addMatcher(
-        (action) =>
-          [
-            createNewStore.pending,
-            updateStore.pending,
-            deleteStore.pending,
-          ].some((thunk) => thunk.match(action)),
-        (state) => {
-          state.loading = true;
-          state.error = null;
-        }
+      .addCase(
+        createNewStore.fulfilled,
+        (state, action: PayloadAction<Store>) => {}
       )
-      .addMatcher(
-        (action) =>
-          [
-            createNewStore.rejected,
-            updateStore.rejected,
-            deleteStore.rejected,
-          ].some((thunk) => thunk.match(action)),
-        (state, action) => {
-          state.loading = false;
-          state.error = (action as PayloadAction<string>).payload;
+      .addCase(updateStore.fulfilled, (state, action: PayloadAction<Store>) => {
+        const index = state.stores.findIndex((s) => s.id === action.payload.id);
+        if (index !== -1) {
+          state.stores[index] = action.payload;
         }
+      })
+      .addCase(
+        deleteStore.fulfilled,
+        (state, action: PayloadAction<number>) => {}
       );
   },
 });

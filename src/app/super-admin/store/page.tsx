@@ -1,14 +1,10 @@
-'use client';
 import StoreManagementPage from "@/pages/store-management";
 import { Suspense } from "react";
-import withSuperAdminAuth from '@/components/common/SuperAdminAuth';
 
-const Page = () => {
+export default function Stores() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <StoreManagementPage />
     </Suspense>
   );
-};
-
-export default withSuperAdminAuth(Page);
+}
