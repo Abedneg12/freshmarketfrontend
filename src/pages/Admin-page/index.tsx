@@ -7,6 +7,7 @@ import { Market } from '@/lib/interface/market';
 import { useAppSelector } from '@/lib/redux/hooks';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { Admin, StoreAdminAssignment } from '@/lib/interface/admins.type';
+import { toast } from 'sonner';
 
 export default function AdminsPage() {
   const { token } = useAppSelector((state) => state.auth);
@@ -23,11 +24,15 @@ export default function AdminsPage() {
   const [stores, setStores] = useState<Market[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Modal konfirmasi hapus
+  const [deleteTargetId, setDeleteTargetId] = useState<string | number | null>(null);
+
   useEffect(() => {
     if (editingAdmin) {
       setFullName(editingAdmin.fullName);
       setEmail(editingAdmin.email);
-      setPassword(''); setSelectedStoreId(
+      setPassword('');
+      setSelectedStoreId(
         editingAdmin.StoreAdminAssignment?.storeId
           ? parseInt(editingAdmin.StoreAdminAssignment.storeId)
           : null
@@ -50,21 +55,27 @@ export default function AdminsPage() {
     setShowForm(true);
   };
 
-  const handleDeleteAdmin = async (adminId: string | number) => {
-    if (!window.confirm(`Are you sure you want to delete admin with ID: ${adminId}?`)) {
-      return;
-    }
+  // Handler untuk trigger modal
+  const handleDeleteAdmin = (adminId: string | number) => {
+    setDeleteTargetId(adminId);
+  };
+
+  // Handler eksekusi hapus setelah konfirmasi modal
+  const confirmDeleteAdmin = async () => {
+    if (!deleteTargetId) return;
     try {
-      await axios.delete(`${apiUrl}/super-admin/store-admins/${adminId}`, {
+      await axios.delete(`${apiUrl}/super-admin/store-admins/${deleteTargetId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      alert(`Admin ${adminId} deleted successfully.`);
+      toast.success(`Admin ${deleteTargetId} deleted successfully.`);
       fetchAdmins();
     } catch (err: any) {
       console.error('Failed to delete admin:', err);
-      alert(`Failed to delete admin: ${err.response?.data?.message || err.message}`);
+      toast.error(`Failed to delete admin: ${err.response?.data?.message || err.message}`);
+    } finally {
+      setDeleteTargetId(null);
     }
   };
 
@@ -86,10 +97,10 @@ export default function AdminsPage() {
             'Content-Type': 'application/json',
           },
         });
-        alert(`Admin updated successfully.`);
+        toast.success('Admin updated successfully.');
       } else {
         if (!dataToSend.password) {
-          alert('Password is required for new admin accounts.');
+          toast.error('Password is required for new admin accounts.');
           return;
         }
         await axios.post(`${apiUrl}/super-admin/store-admins`, dataToSend, {
@@ -98,13 +109,13 @@ export default function AdminsPage() {
             'Content-Type': 'application/json',
           },
         });
-        alert(`Admin added successfully.`);
+        toast.success('Admin added successfully.');
       }
       setShowForm(false);
       fetchAdmins();
     } catch (err: any) {
       console.error('Failed to save admin:', err);
-      alert(`Failed to save admin: ${err.response?.data?.message || err.message}`);
+      toast.error(`Failed to save admin: ${err.response?.data?.message || err.message}`);
     }
   };
 
@@ -172,6 +183,32 @@ export default function AdminsPage() {
 
   return (
     <div className="space-y-6">
+      {/* MODAL KONFIRMASI DELETE */}
+      {deleteTargetId !== null && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full">
+            <h2 className="text-lg font-semibold mb-2">Konfirmasi Hapus Admin</h2>
+            <p className="mb-4 text-gray-700">
+              Yakin ingin menghapus admin dengan ID: {deleteTargetId}?
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setDeleteTargetId(null)}
+                className="px-3 py-1 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmDeleteAdmin}
+                className="px-3 py-1 rounded-md bg-red-600 text-white hover:bg-red-700"
+              >
+                Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="md:flex md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">
@@ -304,7 +341,7 @@ export default function AdminsPage() {
             columns={columns}
             data={admins}
             onEdit={handleEditAdmin}
-            onDelete={handleDeleteAdmin}
+            onDelete={handleDeleteAdmin} // <-- trigger modal!
             searchQuery={searchQuery}
             filterFn={(admin, search) =>
               admin.fullName.toLowerCase().includes(search.toLowerCase()) ||

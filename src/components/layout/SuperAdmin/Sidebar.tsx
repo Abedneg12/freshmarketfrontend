@@ -45,7 +45,7 @@ export default function Sidebar({ showMenu, setShowMenu }: SidebarProps) {
       name: "Store Management",
       icon: StoreIcon,
       id: "store",
-      path: "/super-admin/store",
+      path: "/super-admin/market",
     },
     {
       name: "Inventory",

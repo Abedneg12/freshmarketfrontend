@@ -8,9 +8,9 @@ import {
   deleteStore,
 } from "@/lib/redux/slice/adminStoreSlice";
 import { PlusIcon, SearchIcon, LoaderIcon } from "lucide-react";
-import StoreTable from "./components/StoreTable";
-import StoreForm from "./components/StoreForm";
-import PaginationControls from "./components/PaginationControls";
+import StoreTable from "@/components/market/StoreTable";
+import StoreForm from "@/components/market/StoreForm";
+import PaginationControls from "@/components/market/PaginationControls";
 import { Store } from "@/lib/interface/store.type";
 import { toast } from "sonner";
 
@@ -24,6 +24,9 @@ export default function StoreManagementPage() {
   const [editingStore, setEditingStore] = useState<Store | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  // Untuk modal konfirmasi
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
   useEffect(() => {
     dispatch(fetchAllStores({ page: currentPage }));
@@ -72,27 +75,34 @@ export default function StoreManagementPage() {
     }
   };
 
-  const handleDelete = async (storeId: number) => {
-    if (
-      window.confirm(
-        "Apakah Anda yakin ingin menghapus toko ini? Semua data terkait akan ikut terhapus."
-      )
-    ) {
-      try {
-        await dispatch(deleteStore(storeId)).unwrap();
-        toast.success("Store deleted successfully!");
-        dispatch(fetchAllStores({ page: currentPage }));
-      } catch (err: any) {
-        toast.error(err.message || "Failed to delete store.");
-      }
+  // --- NEW: trigger open modal, no window!
+  const handleDelete = (storeId: number) => {
+    setDeleteTarget(storeId);
+  };
+
+  // --- NEW: confirm delete
+  const confirmDelete = async () => {
+    if (deleteTarget === null) return;
+    try {
+      await dispatch(deleteStore(deleteTarget)).unwrap();
+      toast.success("Store deleted successfully!");
+      dispatch(fetchAllStores({ page: currentPage }));
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete store.");
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
-  const filteredStores = stores.filter(
-    (store) =>
-      store.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      store.address.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const cancelDelete = () => setDeleteTarget(null);
+
+  const filteredStores = Array.isArray(stores)
+    ? stores.filter(
+        (store) =>
+          store.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          store.address.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
 
   return (
     <div className="space-y-6">
@@ -118,6 +128,32 @@ export default function StoreManagementPage() {
       </div>
 
       {error && !loading && <p className="text-red-500 text-center">{error}</p>}
+
+      {/* MODAL KONFIRMASI */}
+      {deleteTarget !== null && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full">
+            <h2 className="text-lg font-semibold mb-2">Konfirmasi Hapus</h2>
+            <p className="mb-4 text-gray-700">
+              Apakah Anda yakin ingin menghapus toko ini? Semua data terkait akan ikut terhapus.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={cancelDelete}
+                className="px-3 py-1 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-3 py-1 rounded-md bg-red-600 text-white hover:bg-red-700"
+              >
+                Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showForm ? (
         <StoreForm
@@ -151,7 +187,7 @@ export default function StoreManagementPage() {
               <StoreTable
                 stores={filteredStores}
                 onEdit={handleEditClick}
-                onDelete={handleDelete}
+                onDelete={handleDelete} // sudah diganti trigger modal!
               />
               <PaginationControls
                 currentPage={currentPage}
