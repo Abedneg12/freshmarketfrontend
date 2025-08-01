@@ -1,16 +1,21 @@
 "use client";
 import { useState, useEffect } from "react";
 import { LoaderIcon } from "lucide-react";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { Store } from "@/lib/interface/store.type";
+import { useDebounce } from "use-debounce";
 
 const markerIcon = new L.Icon({
   iconUrl:
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
   iconSize: [25, 41],
   iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+  shadowSize: [41, 41],
 });
 
 interface StoreFormProps {
@@ -20,24 +25,16 @@ interface StoreFormProps {
   isLoading: boolean;
 }
 
-function LocationPicker({
-  onLocationSelect,
-  initialPosition,
+function ChangeView({
+  center,
+  zoom,
 }: {
-  onLocationSelect: (lat: number, lng: number) => void;
-  initialPosition: [number, number];
+  center: [number, number];
+  zoom: number;
 }) {
-  const [position, setPosition] = useState<[number, number]>(initialPosition);
-  useMapEvents({
-    click(e) {
-      const { lat, lng } = e.latlng;
-      setPosition([lat, lng]);
-      onLocationSelect(lat, lng);
-    },
-  });
-  return position ? (
-    <Marker position={position} icon={markerIcon}></Marker>
-  ) : null;
+  const map = useMap();
+  map.setView(center, zoom);
+  return null;
 }
 
 export default function StoreForm({
@@ -50,9 +47,17 @@ export default function StoreForm({
     name: "",
     address: "",
     city: "",
-    latitude: -6.2088,
+    latitude: -6.2088, // Default ke Jakarta
     longitude: 106.8456,
   });
+
+  const [mapPosition, setMapPosition] = useState<[number, number]>([
+    formData.latitude,
+    formData.longitude,
+  ]);
+
+  const [cityQuery, setCityQuery] = useState("");
+  const [debouncedCityQuery] = useDebounce(cityQuery, 1500);
 
   useEffect(() => {
     if (store) {
@@ -63,19 +68,53 @@ export default function StoreForm({
         latitude: store.latitude,
         longitude: store.longitude,
       });
+      setMapPosition([store.latitude, store.longitude]);
     }
   }, [store]);
 
+  useEffect(() => {
+    if (debouncedCityQuery) {
+      const fetchCoordinates = async () => {
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?city=${debouncedCityQuery}&format=json&limit=1`
+          );
+          const data = await response.json();
+          if (data && data.length > 0) {
+            const { lat, lon } = data[0];
+            const newLat = parseFloat(lat);
+            const newLon = parseFloat(lon);
+            setFormData((prev) => ({
+              ...prev,
+              latitude: newLat,
+              longitude: newLon,
+            }));
+            setMapPosition([newLat, newLon]);
+          }
+        } catch (error) {
+          console.error("Failed to fetch coordinates:", error);
+        }
+      };
+      fetchCoordinates();
+    }
+  }, [debouncedCityQuery]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type } = e.target;
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "number" ? parseFloat(value) || 0 : value,
+      [name]: value,
     }));
+
+    if (name === "city") {
+      setCityQuery(value);
+    }
   };
 
-  const handleLocationSelect = (lat: number, lng: number) => {
+  const handleMapClick = (e: L.LeafletMouseEvent) => {
+    const { lat, lng } = e.latlng;
     setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng }));
+    setMapPosition([lat, lng]);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -84,119 +123,100 @@ export default function StoreForm({
   };
 
   return (
-    <div className="bg-white rounded-lg p-8 w-full max-w-2xl shadow-lg border">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">
-        {store ? "Edit Toko" : "Tambah Toko Baru"}
+    <div className="bg-white rounded-lg p-6 w-full border border-gray-200 shadow-sm">
+      <h2 className="text-xl font-semibold mb-6 text-gray-800 border-b pb-4">
+        {store ? "Edit Store" : "Add New Store"}
       </h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Nama Toko
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Store Name
           </label>
           <input
             type="text"
             name="name"
             value={formData.name}
             onChange={handleChange}
-            className="mt-1 w-full border p-2 rounded-md text-black"
+            className="w-full border border-gray-300 p-2 rounded-md text-black focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
             required
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Alamat Lengkap Toko
-          </label>
-          <input
-            type="text"
-            name="address"
-            value={formData.address}
-            onChange={handleChange}
-            className="mt-1 w-full border p-2 rounded-md text-black"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Kota
-          </label>
-          <input
-            type="text"
-            name="city"
-            value={formData.city}
-            onChange={handleChange}
-            className="mt-1 w-full border p-2 rounded-md text-black"
-            placeholder="Contoh: Jakarta Selatan"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Tentukan Lokasi di Peta
-          </label>
-          <div className="h-64 mt-2 rounded-lg overflow-hidden z-0">
+
+        <div className="space-y-4">
+          <h3 className="text-md font-semibold text-gray-800">
+            Store Location
+          </h3>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Store Address
+            </label>
+            <input
+              type="text"
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              className="w-full border border-gray-300 p-2 rounded-md text-black focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+              placeholder="Enter the full store address"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              City
+            </label>
+            <input
+              type="text"
+              name="city"
+              value={formData.city}
+              onChange={handleChange}
+              className="w-full border border-gray-300 p-2 rounded-md text-black focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+              placeholder="Example: Cirebon"
+              required
+            />
+          </div>
+          <div className="h-80 mt-2 rounded-lg overflow-hidden z-0 border">
             <MapContainer
-              center={[formData.latitude, formData.longitude]}
+              center={mapPosition}
               zoom={13}
               style={{ height: "100%", width: "100%" }}
+              scrollWheelZoom={false}
             >
+              <ChangeView center={mapPosition} zoom={13} />
               <TileLayer
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               />
-              <LocationPicker
-                onLocationSelect={handleLocationSelect}
-                initialPosition={[formData.latitude, formData.longitude]}
+              <Marker
+                position={[formData.latitude, formData.longitude]}
+                icon={markerIcon}
               />
+              <MapEvents onClick={handleMapClick} />
             </MapContainer>
           </div>
+          <p className="text-xs text-gray-500 text-center">
+            Click the map to select this location
+          </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Latitude
-            </label>
-            <input
-              type="number"
-              name="latitude"
-              value={formData.latitude}
-              onChange={handleChange}
-              step="any"
-              className="mt-1 w-full border p-2 rounded-md text-black bg-gray-100"
-              readOnly
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Longitude
-            </label>
-            <input
-              type="number"
-              name="longitude"
-              value={formData.longitude}
-              onChange={handleChange}
-              step="any"
-              className="mt-1 w-full border p-2 rounded-md text-black bg-gray-100"
-              readOnly
-            />
-          </div>
-        </div>
-        <div className="flex justify-end space-x-4 pt-4">
+
+        <div className="flex justify-end space-x-4 pt-4 border-t mt-6">
           <button
             type="button"
             onClick={onCancel}
-            className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300"
+            className="bg-white text-gray-800 px-6 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 font-semibold transition"
           >
-            Batal
+            Cancel
           </button>
           <button
             type="submit"
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center min-w-[100px] justify-center"
+            className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 flex items-center min-w-[120px] justify-center font-semibold transition"
             disabled={isLoading}
           >
             {isLoading ? (
               <LoaderIcon className="animate-spin h-5 w-5" />
+            ) : store ? (
+              "Save Changes"
             ) : (
-              "Simpan"
+              "Add Store"
             )}
           </button>
         </div>
@@ -204,3 +224,21 @@ export default function StoreForm({
     </div>
   );
 }
+
+const MapEvents = ({
+  onClick,
+}: {
+  onClick: (e: L.LeafletMouseEvent) => void;
+}) => {
+  const map = useMap();
+
+  useEffect(() => {
+    map.on("click", onClick);
+
+    return () => {
+      map.off("click", onClick);
+    };
+  }, [map, onClick]);
+
+  return null;
+};
