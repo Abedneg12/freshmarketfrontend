@@ -1,9 +1,10 @@
 'use client';
-import ReportsPage from "@/pages/Reports-page";
 import withSuperAdminAuth from '@/components/common/SuperAdminAuth';
+import StockReportsPage from '@/pages/Stock-Reports-page';
+import React from 'react';
 
 const Page = () => {
-  return <ReportsPage />;
+  return <StockReportsPage />;
 };
 
 export default (Page);

@@ -186,8 +186,6 @@ import { ShoppingCartIcon } from 'lucide-react';
 import { Product, storeProduct } from '@/lib/interface/product.type';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import { fetchStoreProducts } from '@/lib/redux/slice/storeProductSlice';
-import { apiUrl } from '@/pages/config';
-import axios from 'axios';
 import { fetchMarket } from '@/lib/redux/slice/storeSlice';
 
 interface ProductGridProps {
@@ -197,51 +195,32 @@ interface ProductGridProps {
     sortBy: string;
   };
   dealsOnly?: boolean;
-  storeId?: string;
+  selectedMarkets?: string[];
 }
+
 
 export const ProductGrid = ({
   category,
   searchTerm,
   filters,
   dealsOnly,
-  storeId
+  selectedMarkets
 }: ProductGridProps) => {
-  const { token } = useAppSelector((state) => state.auth);
-  const [loading, setLoading] = useState(true);
   const dispatch = useAppDispatch();
+  const [loading, setLoading] = useState(true);
+  const [filteredList, setFilteredList] = useState<{ product: Product; storeId: number }[]>([]);
   const [allStoreProducts, setAllStoreProducts] = useState<storeProduct[]>([]);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [Products, setProducts] = useState<Product[]>([]);
-  const [showAll, setShowAll] = useState(false);
-  const { data: markets, loading: storesLoading } = useAppSelector((state) => state.Market);
-
-  const fetchProducts = async () => {
-    try {
-      const res = await axios.get(
-        `${apiUrl}/product`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          }
-        }
-      );
-      setProducts(res.data as Product[]);
-    } catch (error) {
-      alert('Failed to fetch Products');
-      console.error('Failed to fetch Products:', error);
-      setProducts([]);
-    }
-  };
+  const { data: markets } = useAppSelector((state) => state.Market);
 
   useEffect(() => {
     const fetchAll = async () => {
-      if (markets.length === 0) {
-        dispatch(fetchMarket());
+      if (!markets || markets.length === 0) {
+        await dispatch(fetchMarket());
         return;
       }
+
       const all: storeProduct[] = [];
+
       for (const store of markets) {
         const result = await dispatch(fetchStoreProducts(store.id)).unwrap();
         if (Array.isArray(result)) {
@@ -250,38 +229,67 @@ export const ProductGrid = ({
           all.push(result);
         }
       }
+
       setAllStoreProducts(all);
-      setAllProducts(all.flatMap(store => store.products));
+      setLoading(false);
     };
+
     fetchAll();
-    fetchProducts();
-    // eslint-disable-next-line
   }, [markets, dispatch]);
 
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      let filteredProducts = [...allProducts];
-      // Filter by search term
-      if (searchTerm) {
-        const term = searchTerm.toLowerCase();
-        filteredProducts = filteredProducts.filter(p => p.name.toLowerCase().includes(term));
-      }
-      // Tambahkan filter/filtering lain jika perlu di sini (deals, category, sort, dst)
+    const allFlattened: { product: Product; storeId: number }[] = [];
 
-      // SORTING - contoh default
-      // if (filters.sortBy === 'price-asc') {...}
-      // if (filters.sortBy === 'price-desc') {...}
+    allStoreProducts.forEach(store => {
+      store.products.forEach(product => {
+        allFlattened.push({
+          product,
+          storeId: store.id
+        });
+      });
+    });
 
-      // --- HAPUS DUPLIKAT BERDASARKAN ID ---
-      const uniqueProducts = filteredProducts.filter(
-        (item, idx, arr) => arr.findIndex(p => p.id === item.id) === idx
+    let results = [...allFlattened];
+    console.log(selectedMarkets)
+    if (selectedMarkets && selectedMarkets.length > 0) {
+      results = results.filter(p => selectedMarkets.includes(String(p.storeId)));
+    }
+
+    // ✅ CATEGORY filter
+    if (category !== 'all') {
+      results = results.filter(p =>
+        String(p.product.category.id) === category
       );
+    }
 
-      setProducts(uniqueProducts);
-      setLoading(false);
-    }, 800);
-  }, [category, searchTerm, filters, dealsOnly, storeId, allProducts]);
+    // ✅ SEARCH filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      results = results.filter(p =>
+        p.product.name.toLowerCase().includes(term)
+      );
+    }
+
+    // ✅ PRICE SORT
+    switch (filters?.sortBy) {
+      case 'price-asc':
+        results.sort(
+          (a, b) =>
+            (a.product.price || a.product.basePrice) - (b.product.price || b.product.basePrice)
+        );
+        break;
+      case 'price-desc':
+        results.sort(
+          (a, b) =>
+            (b.product.price || b.product.basePrice) - (a.product.price || a.product.basePrice)
+        );
+        break;
+      default:
+        break; // Do nothing if no valid sort
+    }
+
+    setFilteredList(results);
+  }, [searchTerm, category, filters, allStoreProducts, selectedMarkets]);
 
   if (loading) {
     return (
@@ -297,65 +305,76 @@ export const ProductGrid = ({
     );
   }
 
-  if (Products.length === 0) {
+  if (filteredList.length === 0) {
     return (
       <div className="text-center py-10">
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
-          No products found
-        </h3>
-        <p className="text-gray-500">
-          Try adjusting your filters or search term
-        </p>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+        <p className="text-gray-500">Try adjusting your filters or search term</p>
       </div>
     );
   }
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-      {Products.map(product => (
-        <div
-          key={product.id}
-          className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
-        >
-          <Link href={`/product/${product.id}`} className="block">
-            <div className="relative h-48 overflow-hidden">
-              <img
-                src={product.images?.[0]?.imageUrl || "/noimage.png"}
-                alt={product.name}
-                className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300"
-              />
-            </div>
-          </Link>
-          <div className="p-4">
+      {filteredList.map(({ product, storeId }) => {
+        const store = markets.find(m => m.id === storeId);
+        const storeName = store?.name || 'Unknown Store';
+        const isOutOfStock = product.stocks?.find(s => s.quantity === 0)?.quantity === 0;
+
+        return (
+          <div
+            key={`${product.id}-${storeId}`}
+            className={`rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 ${isOutOfStock ? 'bg-gray-100 text-gray-400' : 'bg-white'
+              }`}
+          >
             <Link href={`/product/${product.id}`} className="block">
-              <h3 className="font-medium text-gray-800 hover:text-green-600">
-                {product.name}
-              </h3>
+              <div className="relative h-48 overflow-hidden">
+                <img
+                  src={product.images?.[0]?.imageUrl}
+                  alt={product.name}
+                  className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300"
+                />
+              </div>
             </Link>
-            <div className="mt-2 flex justify-between items-center">
-              <div>
-                {product.price ? (
-                  <div className="flex items-center">
-                    <span className="font-bold text-red-500">
-                      Rp.{product.price.toFixed(0)}
-                    </span>
-                    <span className="text-gray-400 line-through ml-2 text-sm">
+            <div className="p-4">
+              <Link href={`/product/${product.id}`} className="block">
+                <h3 className="font-medium hover:text-green-600">{product.name}</h3>
+                <p className="text-sm text-gray-500 italic">{storeName}</p>
+                {isOutOfStock && (
+                  <p className="text-xs text-red-500 font-semibold">Out of stock</p>
+                )}
+              </Link>
+              <div className="mt-2 flex justify-between items-center">
+                <div>
+                  {product.price ? (
+                    <div className="flex items-center">
+                      <span className="font-bold text-red-500">
+                        Rp.{product.price.toFixed(0)}
+                      </span>
+                      <span className="text-gray-400 line-through ml-2 text-sm">
+                        Rp.{product.basePrice.toFixed(0)}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="font-bold text-green-600">
                       Rp.{product.basePrice.toFixed(0)}
                     </span>
-                  </div>
-                ) : (
-                  <span className="font-bold text-green-600">
-                    Rp.{product.basePrice.toFixed(0)}
-                  </span>
-                )}
+                  )}
+                </div>
+                <button
+                  disabled={isOutOfStock}
+                  className={`rounded-full p-2 transition-colors ${isOutOfStock
+                    ? 'bg-gray-300 cursor-not-allowed'
+                    : 'bg-green-100 hover:bg-green-200 text-green-700'
+                    }`}
+                >
+                  <ShoppingCartIcon className="h-5 w-5" />
+                </button>
               </div>
-              <button className="bg-green-100 hover:bg-green-200 text-green-700 rounded-full p-2 transition-colors">
-                <ShoppingCartIcon className="h-5 w-5" />
-              </button>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

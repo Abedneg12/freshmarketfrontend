@@ -9,11 +9,10 @@ const withSuperAdminAuth = <P extends object>(
   WrappedComponent: React.ComponentType<P>
 ) => {
   const Wrapper = (props: P) => {
-    const { isAuthenticated, user, isLoading } = useAppSelector((state) => state.auth);
+    const { isAuthenticated, user } = useAppSelector((state) => state.auth);
     const router = useRouter();
 
     useEffect(() => {
-      if (isLoading === false) {
         if (!isAuthenticated) {
           toast.error('You must be logged in to view this page.');
           router.replace('/login');
@@ -21,10 +20,9 @@ const withSuperAdminAuth = <P extends object>(
           toast.error('You are not authorized to view this page.');
           router.replace('/');
         }
-      }
-    }, [isAuthenticated, user, isLoading, router]);
+    }, [isAuthenticated, user, router]);
 
-    if (isLoading || !isAuthenticated || user?.role !== 'SUPER_ADMIN') {
+    if (!isAuthenticated || user?.role !== 'SUPER_ADMIN') {
       return null;
     }
 

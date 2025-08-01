@@ -9,7 +9,8 @@ import {
     Archive, 
     TicketPercent, 
     BarChart3, 
-    Book
+    Book,
+    Layers
 } from 'lucide-react';
 import { useAppSelector } from '@/lib/redux/hooks'; // 1. Impor hook Redux
 
@@ -17,10 +18,12 @@ import { useAppSelector } from '@/lib/redux/hooks'; // 1. Impor hook Redux
 const menuItems = [
     { id: 'dashboard', label: 'Dashboard', href: '/store-admin', icon: LayoutDashboard }, 
     { id: 'orders', label: 'Pesanan', href: '/store-admin/pesanan', icon: ShoppingCart },
-    { id: 'inventory', label: 'Inventaris', href: '/store-admin/inventaris', icon: Archive },
     { id: 'discounts', label: 'Diskon', href: '/store-admin/diskon', icon: TicketPercent },
     { id: 'reports', label: 'Laporan', href: '/store-admin/reports', icon: BarChart3 },
     { id: 'catalog', label: 'Katalog', href: '/store-admin/katalog', icon: Book },
+    { id: 'category', label: 'Category', href: '/store-admin/category', icon: Layers },
+    { id: 'salesreports', label: 'Sales Reports', href: '/store-admin/reports', icon: Layers },
+    { id: 'stockreports', label: 'stock Reports', href: '/store-admin/stock-reports', icon: Layers },
 ];
 
 // --- Komponen Sidebar ---

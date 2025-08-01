@@ -4,6 +4,5 @@ export type Category = {
   products?: {
     id: number;
     name: string;
-    // Add other product fields if needed
   }[];
 };

@@ -72,7 +72,7 @@ export default function StoreManagementPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-gray-900">
       <div className="md:flex md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">

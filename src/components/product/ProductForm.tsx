@@ -166,7 +166,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         setCategories([]);
       }
     };
-    fetchCategories
+    fetchCategories();
     dispatch(fetchMarket());
     dispatch(fetchRecommendations());
   }, [dispatch]);

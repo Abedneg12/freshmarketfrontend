@@ -74,6 +74,7 @@ export default function DiscountPage() {
 
   const columns = [
     { label: 'Type', accessor: 'type' },
+    { label: 'Product', accessor: 'product', render: (row: Discount) => row.product?.name || '-' },
     {
       label: 'Value',
       accessor: 'value',

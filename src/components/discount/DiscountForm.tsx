@@ -61,7 +61,7 @@ export const DiscountForm = ({ onCancel, isEditing, editingDiscount }: { onCance
       console.log(`discount type :`, editingDiscount.type);
       setSelectedStoreId(editingDiscount.storeId || '');
       setSelectedValue(editingDiscount.value || '');
-      setSelectedProductId(editingDiscount.productId || '');
+      setSelectedProductId(editingDiscount.product?.id || '');
       setMinPurchase(editingDiscount.minPurchase || '');
       setMaxDiscount(editingDiscount.maxDiscount || '');
       setStartDate(editingDiscount.startDate ? new Date(editingDiscount.startDate).toISOString().split('T')[0] : '');

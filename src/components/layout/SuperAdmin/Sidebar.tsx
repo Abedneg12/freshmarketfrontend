@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
-import { useRouter } from 'next/navigation';
-import { LayoutDashboardIcon, StoreIcon, UsersIcon, BarChart3Icon, LogOutIcon, PackageIcon, PercentCircleIcon, Layers, User, UserIcon, NotebookPenIcon } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
+import { LayoutDashboardIcon, StoreIcon, UsersIcon, BarChart3Icon, LogOutIcon, PackageIcon, PercentCircleIcon, Layers, User, UserIcon, NotebookPenIcon, PackagePlusIcon } from 'lucide-react';
 import { logoutAction } from '@/lib/redux/slice/authSlice';
 import { useAppDispatch } from '@/lib/redux/hooks';
 
@@ -12,19 +12,20 @@ interface SidebarProps {
 
 export default function Sidebar({ showMenu, setShowMenu }: SidebarProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const dispatch = useAppDispatch();
 
   const navigation = [
     { name: 'Dashboard', icon: LayoutDashboardIcon, id: 'dashboard', path: '/super-admin/dashboard' },
     { name: 'Order', icon: NotebookPenIcon, id: 'reports', path: '/super-admin/order' },
-    { name: 'Store Management', icon: StoreIcon, id: 'stores', path: '/super-admin/store' },
+    { name: 'Store Management', icon: StoreIcon, id: 'stores', path: '/super-admin/storeManagement' },
     { name: 'Inventory', icon: PackageIcon, id: 'inventory', path: '/super-admin/inventory' },
-    { name: 'Discount', icon: PercentCircleIcon, id: 'discount', path: '/super-admin/discount' },
+    { name: 'Inventory Journal', icon: PackagePlusIcon, id: 'inventory', path: '/super-admin/inventory-journal' },
     { name: 'Category', icon: Layers, id: 'category', path: '/super-admin/category' },
     { name: 'Admin Accounts', icon: UsersIcon, id: 'admins', path: '/super-admin/admins' },
     { name: 'Users Accounts', icon: UserIcon, id: 'users', path: '/super-admin/users' },
-    { name: 'Reports', icon: BarChart3Icon, id: 'reports', path: '/super-admin/reports' },
-
+    { name: 'Sales Reports', icon: BarChart3Icon, id: 'sales-reports', path: '/super-admin/reports' },
+    { name: 'Stock Reports', icon: BarChart3Icon, id: 'stock-reports', path: '/super-admin/stock-reports' },
   ];
 
   const handleNavigation = (path: string) => {
@@ -32,7 +33,6 @@ export default function Sidebar({ showMenu, setShowMenu }: SidebarProps) {
     router.push(path);
   };
 
-  // 4. Buat fungsi logout yang bersih
   const handleLogout = () => {
     dispatch(logoutAction());
     router.push('/');
@@ -61,10 +61,18 @@ export default function Sidebar({ showMenu, setShowMenu }: SidebarProps) {
           {navigation.map(item => (
             <button
               key={item.name}
-              className="group flex items-center w-full px-2 py-2 text-base md:text-sm font-medium rounded-md cursor-pointer text-left text-white hover:bg-green-800"
               onClick={() => handleNavigation(item.path)}
+              className={`group flex items-center w-full px-2 py-2 text-base md:text-sm font-medium rounded-md cursor-pointer text-left text-white transition-colors duration-150 ${
+                pathname === item.path
+                  ? 'bg-green-800' // Active link style
+                  : 'hover:bg-green-800' // Inactive link hover style
+              }`}
             >
-              <item.icon className="mr-3 flex-shrink-0 h-6 w-6" aria-hidden="true" /> {item.name}
+              <item.icon className="mr-3 flex-shrink-0 h-6 w-6" aria-hidden="true" />
+              <span className="flex-1">{item.name}</span>
+              {pathname === item.path && (
+                <span className="h-1.5 w-1.5 rounded-full bg-white" />
+              )}
             </button>
           ))}
         </nav>
