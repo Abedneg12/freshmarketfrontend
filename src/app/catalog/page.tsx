@@ -1,9 +1,10 @@
-'use client';
-import CatalogPage from '@/pages/Catalog-page/Catalog';
-import React from 'react'
+import { Suspense } from "react";
+import CatalogContent from "@/pages/Catalog-page/Catalog";
 
-export default function page() {
+export default function CatalogPage() {
   return (
-    <CatalogPage />
-  )
+    <Suspense fallback={<div>Loading catalog...</div>}>
+      <CatalogContent />
+    </Suspense>
+  );
 }

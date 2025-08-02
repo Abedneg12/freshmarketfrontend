@@ -4,14 +4,14 @@ import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
 import { LoaderIcon, User, Shield, MapPinIcon } from "lucide-react";
-import PersonalInformation from "./components/personal-information";
-import Security from "./components/security";
+import PersonalInformation from "@/components/profile/personal-information";
+import Security from "@/components/profile/security";
 import { useRouter } from "next/navigation";
 import { fetchProfile } from "@/lib/redux/slice/profileSlice";
 
 // Gunakan Dynamic Import untuk AddressManagement
 const AddressManagement = dynamic(
-  () => import("./components/address.management"),
+  () => import("@/components/profile/address.management"),
   {
     ssr: false,
     loading: () => (
