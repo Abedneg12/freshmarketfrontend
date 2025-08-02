@@ -1,7 +1,7 @@
 "use client";
 import { Hero } from "@/components/hero";
 import { ProductNearestShop } from "@/components/productNearestShop";
-import { LocationBased } from "@/components/locationBased";
+import LocationBasedPage from "@/components/locationBased";
 
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
@@ -37,7 +37,7 @@ export default function Home () {
       <Hero />
         <ProductNearestShop />
       <div id="nearest-shop-section">
-      <LocationBased />
+      <LocationBasedPage />
       </div>
     </>
   );

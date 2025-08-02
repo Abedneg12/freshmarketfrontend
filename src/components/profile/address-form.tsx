@@ -8,7 +8,7 @@ import { useDebounce } from "use-debounce";
 
 // Buat komponen peta menjadi dinamis
 const MapWithNoSSR = dynamic(
-  () => import("../../../components/common/MapPicker"),
+  () => import("@/components/common/MapPicker"),
   {
     ssr: false,
     loading: () => (

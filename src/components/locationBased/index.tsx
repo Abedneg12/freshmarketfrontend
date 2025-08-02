@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAppSelector } from "@/lib/redux/hooks";
 
-export const LocationBased = () => {
+const LocationBasedPage = () => {
   const { data: nearbyStore, loading: storesLoading } = useAppSelector(
     (state) => state.store
   );
@@ -22,8 +22,7 @@ export const LocationBased = () => {
             Akses Lokasi Ditolak
           </h3>
           <p className="text-gray-500 mb-6">
-            Kami tidak dapat merekomendasikan toko terdekat tanpa izin lokasi
-            Anda.
+            Kami tidak dapat merekomendasikan toko terdekat tanpa izin lokasi Anda.
             <br />
             Silakan aktifkan izin lokasi di pengaturan browser Anda.
           </p>
@@ -137,3 +136,5 @@ export const LocationBased = () => {
     </section>
   );
 };
+
+export default LocationBasedPage;
