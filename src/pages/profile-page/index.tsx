@@ -1,13 +1,26 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
 import { LoaderIcon, User, Shield, MapPinIcon } from "lucide-react";
 import PersonalInformation from "./components/personal-information";
 import Security from "./components/security";
-import AddressManagement from "./components/address.management";
 import { useRouter } from "next/navigation";
 import { fetchProfile } from "@/lib/redux/slice/profileSlice";
+
+// Gunakan Dynamic Import untuk AddressManagement
+const AddressManagement = dynamic(
+  () => import("./components/address.management"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex justify-center py-10">
+        <LoaderIcon className="h-8 w-8 animate-spin text-green-600" />
+      </div>
+    ),
+  }
+);
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("personal");
@@ -16,9 +29,7 @@ export default function ProfilePage() {
   const { isAuthenticated } = useAppSelector((state) => state.auth);
   const profile = useAppSelector((state) => state.profile);
 
-  // Ganti path user.role sesuai dengan struktur Redux-mu
-  const userRole =
-    profile?.role || profile?.role || null;
+  const userRole = profile?.role || profile?.role || null;
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -49,7 +60,6 @@ export default function ProfilePage() {
           Account Settings
         </h1>
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar */}
           <aside className="lg:w-1/4">
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
               <nav className="divide-y divide-gray-200">
@@ -75,7 +85,6 @@ export default function ProfilePage() {
                   <Shield className="h-5 w-5 mr-3" />
                   Security
                 </button>
-                {/* Tab Addresses hanya untuk BUKAN STORE_ADMIN */}
                 {userRole !== "STORE_ADMIN" && (
                   <button
                     onClick={() => setActiveTab("addresses")}
@@ -92,15 +101,12 @@ export default function ProfilePage() {
               </nav>
             </div>
           </aside>
-
-          {/* Main content */}
           <main className="lg:w-3/4">
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               {activeTab === "personal" && (
                 <PersonalInformation user={profile} />
               )}
               {activeTab === "security" && <Security user={profile} />}
-              {/* Konten Address hanya untuk BUKAN STORE_ADMIN */}
               {activeTab === "addresses" && userRole !== "STORE_ADMIN" && (
                 <AddressManagement />
               )}

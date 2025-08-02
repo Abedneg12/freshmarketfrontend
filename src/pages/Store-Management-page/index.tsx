@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import {
   fetchAllStores,
@@ -9,10 +10,19 @@ import {
 } from "@/lib/redux/slice/adminStoreSlice";
 import { PlusIcon, SearchIcon, LoaderIcon } from "lucide-react";
 import StoreTable from "@/components/market/StoreTable";
-import StoreForm from "@/components/market/StoreForm";
 import PaginationControls from "@/components/market/PaginationControls";
 import { Store } from "@/lib/interface/store.type";
 import { toast } from "sonner";
+
+// Gunakan Dynamic Import untuk StoreForm ---
+const StoreForm = dynamic(() => import("@/components/market/StoreForm"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex justify-center py-10">
+      <LoaderIcon className="h-8 w-8 animate-spin text-green-600" />
+    </div>
+  ),
+});
 
 export default function StoreManagementPage() {
   const dispatch = useAppDispatch();
@@ -24,8 +34,6 @@ export default function StoreManagementPage() {
   const [editingStore, setEditingStore] = useState<Store | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-
-  // Untuk modal konfirmasi
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
   useEffect(() => {
@@ -75,12 +83,10 @@ export default function StoreManagementPage() {
     }
   };
 
-  // --- NEW: trigger open modal, no window!
   const handleDelete = (storeId: number) => {
     setDeleteTarget(storeId);
   };
 
-  // --- NEW: confirm delete
   const confirmDelete = async () => {
     if (deleteTarget === null) return;
     try {
@@ -129,13 +135,13 @@ export default function StoreManagementPage() {
 
       {error && !loading && <p className="text-red-500 text-center">{error}</p>}
 
-      {/* MODAL KONFIRMASI */}
       {deleteTarget !== null && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full">
             <h2 className="text-lg font-semibold mb-2">Konfirmasi Hapus</h2>
             <p className="mb-4 text-gray-700">
-              Apakah Anda yakin ingin menghapus toko ini? Semua data terkait akan ikut terhapus.
+              Apakah Anda yakin ingin menghapus toko ini? Semua data terkait
+              akan ikut terhapus.
             </p>
             <div className="flex justify-end gap-2">
               <button
@@ -187,7 +193,7 @@ export default function StoreManagementPage() {
               <StoreTable
                 stores={filteredStores}
                 onEdit={handleEditClick}
-                onDelete={handleDelete} // sudah diganti trigger modal!
+                onDelete={handleDelete}
               />
               <PaginationControls
                 currentPage={currentPage}
