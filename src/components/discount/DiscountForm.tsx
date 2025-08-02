@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { apiUrl } from '@/pages/config';
+import { apiUrl } from '@/config';
 import { useRouter } from 'next/navigation';
 import { Market } from '@/lib/interface/market';
 import { Discount } from '@/lib/interface/discount.type';

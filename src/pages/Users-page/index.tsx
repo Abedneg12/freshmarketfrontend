@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { SearchIcon } from 'lucide-react';
-import { apiUrl } from '../config';
+import { apiUrl } from '../../config';
 import axios from 'axios';
 import { DataTable } from '@/components/common/DataTable';
 import { useAppSelector } from '@/lib/redux/hooks';

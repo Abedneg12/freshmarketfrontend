@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import { Market } from '@/lib/interface/market';
 import axios from 'axios';
-import { apiUrl } from '@/pages/config';
+import { apiUrl } from '@/config';
 
 interface ReportFiltersProps {
   onFilterChange: (filters: {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppSelector } from '@/lib/redux/hooks';
 import { Market } from '@/lib/interface/market';
 import axios from 'axios';
-import { apiUrl } from '@/pages/config';
+import { apiUrl } from '@/config';
 
 interface StockReportFiltersProps {
   onFilterChange: (filters: { year: number; month: number; storeId: number | undefined }) => void;

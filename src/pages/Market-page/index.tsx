@@ -5,7 +5,7 @@ import { MapPinIcon } from 'lucide-react';
 import { ProductGrid } from '../../components/catalog/ProductGrid';
 import { Market } from '@/lib/interface/market';
 import axios from 'axios';
-import { apiUrl } from '@/pages/config';
+import { apiUrl } from '@/config';
 
 export default function StoreDetail() {
   const params = useParams<{ id: string }>();

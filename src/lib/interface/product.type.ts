@@ -1,3 +1,4 @@
+import { Discount } from "./discount.type";
 import { Market } from "./market";
 
 export interface ProductImage {
@@ -9,7 +10,7 @@ export interface ProductCategory {
   id: number;
   name: string;
 }
-
+ 
 export interface StoreStock {
   id: number;
   storeId: number;
@@ -29,6 +30,7 @@ export interface Product {
   createdAt: string; // ISO date string
   images?: ProductImage[];
   stocks?: StoreStock[];
+  discounts?: Discount; 
 }
 
 export interface storeProduct {

@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
 import { IAddress } from "@/lib/interface/address";
-import { apiUrl } from "@/pages/config";
+import { apiUrl } from "@/config";
 
 interface AddressState {
   addresses: IAddress[];

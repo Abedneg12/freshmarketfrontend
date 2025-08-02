@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { IUser } from "@/lib/interface/auth";
-import { apiUrl } from "@/pages/config";
+import { apiUrl } from "@/config";
 import axios from "axios";
 
 const initialState: IUser = {

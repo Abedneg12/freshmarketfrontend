@@ -4,7 +4,7 @@ import { ShoppingCartIcon } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { Product } from '@/lib/interface/product.type';
 import axios from 'axios';
-import { apiUrl } from '@/pages/config';
+import { apiUrl } from '@/config';
 
 export default function ProductPage() {
     const params = useParams<{ id: string }>();

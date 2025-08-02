@@ -7,9 +7,7 @@ import { Product, storeProduct } from '@/lib/interface/product.type';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import { fetchStoreProducts } from '@/lib/redux/slice/storeProductSlice';
 import { fetchMarket } from '@/lib/redux/slice/storeSlice';
-// 1. Impor action 'addItemToCart' dari cartSlice
 import { addItemToCart } from '@/lib/redux/slice/cartSlice';
-// Impor toast untuk notifikasi (asumsi Anda sudah mengaturnya)
 import { toast } from 'react-toastify';
 
 interface ProductGridProps {

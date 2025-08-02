@@ -9,7 +9,7 @@ import {
   InfoIcon,
   ShieldCheckIcon,
 } from "lucide-react";
-import { apiUrl } from "@/pages/config";
+import { apiUrl } from "@/config";
 
 interface SecurityProps {
   user: IUser | null;

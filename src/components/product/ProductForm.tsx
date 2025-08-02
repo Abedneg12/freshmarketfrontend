@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { XIcon, PlusIcon, ImageIcon, MinusIcon } from 'lucide-react';
 import { Market } from '@/lib/interface/market';
-import { apiUrl } from '@/pages/config';
+import { apiUrl } from '@/config';
 import { Category } from '@/lib/interface/category.type';
 import axios from 'axios';
 import { Product, StoreStock } from '@/lib/interface/product.type';

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ReportFilters } from '@/components/reports/ReportFilters';
 import { ReportChart } from '@/components/reports/ReportChart';
 import axios from 'axios';
-import { apiUrl} from '../config'; // Assuming config is in the parent directory
+import { apiUrl} from '../../config'; // Assuming config is in the parent directory
 import { useAppSelector } from '@/lib/redux/hooks';
 
 // Define interfaces for the report data structures from your backend

@@ -9,7 +9,7 @@ import { getUserFromToken } from "@/utils/auth";
 import axios from "axios";
 import { ILoginResponse } from "@/lib/interface/auth";
 import { LoaderIcon, AlertCircleIcon } from "lucide-react";
-import { apiUrl } from "../config";
+import { apiUrl } from "../../config";
 
 export default function LoginPage() {
   const router = useRouter();

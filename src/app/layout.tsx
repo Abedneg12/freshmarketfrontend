@@ -32,13 +32,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <StoreProvider>
-      <AuthLoaderClient />
-      <html lang="en">
-        <body className={`${montserrat.className} antialiased`}>
+    <html lang="en">
+      <body className={`${montserrat.className} antialiased`}>
+        <StoreProvider>
+          <AuthLoaderClient />
           <ConditionalLayout>{children}</ConditionalLayout>
-        </body>
-      </html>
-    </StoreProvider>
+        </StoreProvider>
+      </body>
+    </html>
   );
 }
