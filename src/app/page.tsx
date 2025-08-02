@@ -2,7 +2,6 @@
 import { Hero } from "@/components/hero";
 import { ProductNearestShop } from "@/components/productNearestShop";
 import { LocationBased } from "@/components/locationBased";
-
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 

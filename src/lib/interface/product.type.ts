@@ -30,7 +30,7 @@ export interface Product {
   createdAt: string; // ISO date string
   images?: ProductImage[];
   stocks?: StoreStock[];
-  discounts?: Discount; 
+  discounts?: Discount[]; 
 }
 
 export interface storeProduct {

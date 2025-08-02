@@ -9,6 +9,7 @@ import { fetchStoreProducts } from '@/lib/redux/slice/storeProductSlice';
 import { fetchMarket } from '@/lib/redux/slice/storeSlice';
 import { addItemToCart } from '@/lib/redux/slice/cartSlice';
 import { toast } from 'react-toastify';
+import { Discount } from '@/lib/interface/discount.type';
 
 interface ProductGridProps {
     category: string;
@@ -18,14 +19,86 @@ interface ProductGridProps {
     };
     dealsOnly?: boolean;
     selectedMarkets?: string[];
+    storeId?: number;
 }
+
+// Helper function to calculate discounted price
+const calculateDiscount = (product: Product, storeId: number) => {
+    const applicableDiscount = product.discounts?.[0];
+
+    if (!applicableDiscount) {
+        return {
+            finalPrice: product.basePrice,
+            hasDiscount: false,
+            discountType: null,
+        };
+    }
+
+    if (applicableDiscount.storeId !== storeId || (applicableDiscount.product?.id && applicableDiscount.product?.id !== product.id)) {
+        return {
+            finalPrice: product.basePrice,
+            hasDiscount: false,
+            discountType: null,
+        };
+    }
+
+    const now = new Date();
+    const startDate = new Date(applicableDiscount.startDate);
+    const endDate = new Date(applicableDiscount.endDate);
+
+    if (now < startDate || now > endDate) {
+        return {
+            finalPrice: product.basePrice,
+            hasDiscount: false,
+            discountType: null,
+        };
+    }
+
+
+    if (applicableDiscount.type === 'NOMINAL') {
+        return {
+            finalPrice: product.basePrice - parseFloat(applicableDiscount.value || '0'),
+            hasDiscount: true,
+            discountType: applicableDiscount.type,
+        };
+    }
+
+    if (applicableDiscount.type === 'PERCENTAGE') {
+        let discountAmount = (product.basePrice * parseFloat(applicableDiscount.value || '0')) / 100;
+        if (applicableDiscount.maxDiscount && discountAmount > applicableDiscount.maxDiscount) {
+            discountAmount = applicableDiscount.maxDiscount;
+        }
+        return {
+            finalPrice: product.basePrice - discountAmount,
+            hasDiscount: true,
+            discountType: applicableDiscount.type,
+        };
+    }
+
+    if (applicableDiscount.type === 'BUY1GET1') {
+        return {
+            finalPrice: product.basePrice,
+            hasDiscount: true,
+            discountType: applicableDiscount.type,
+        };
+    }
+
+
+    return {
+        finalPrice: product.basePrice,
+        hasDiscount: false,
+        discountType: null,
+    };
+};
+
 
 export const ProductGrid = ({
     category,
     searchTerm,
     filters,
     dealsOnly,
-    selectedMarkets
+    selectedMarkets,
+    storeId
 }: ProductGridProps) => {
     const dispatch = useAppDispatch();
     const [loading, setLoading] = useState(true);
@@ -39,18 +112,25 @@ export const ProductGrid = ({
                 await dispatch(fetchMarket());
                 return;
             }
+            if (storeId) {
+                const result = await dispatch(fetchStoreProducts(storeId)).unwrap();
+                setAllStoreProducts([result]);
+                setLoading(false);
+                return;
+            } else {
 
-            const all: storeProduct[] = [];
-            for (const store of markets) {
-                const result = await dispatch(fetchStoreProducts(store.id)).unwrap();
-                if (Array.isArray(result)) {
-                    all.push(...result);
-                } else {
-                    all.push(result);
+                const all: storeProduct[] = [];
+                for (const store of markets) {
+                    const result = await dispatch(fetchStoreProducts(store.id)).unwrap();
+                    if (Array.isArray(result)) {
+                        all.push(...result);
+                    } else {
+                        all.push(result);
+                    }
                 }
+                setAllStoreProducts(all);
+                setLoading(false);
             }
-            setAllStoreProducts(all);
-            setLoading(false);
         };
         fetchAll();
     }, [markets, dispatch]);
@@ -62,7 +142,8 @@ export const ProductGrid = ({
                 allFlattened.push({ product, storeId: store.id });
             });
         });
-
+        console.log('All Flattened Products:', allFlattened);
+        console.log('Selected Markets:', allStoreProducts);
         let results = [...allFlattened];
         if (selectedMarkets && selectedMarkets.length > 0) {
             results = results.filter(p => selectedMarkets.includes(String(p.storeId)));
@@ -74,20 +155,35 @@ export const ProductGrid = ({
             const term = searchTerm.toLowerCase();
             results = results.filter(p => p.product.name.toLowerCase().includes(term));
         }
+
+        if (dealsOnly) {
+            results = results.filter(({ product, storeId }) => {
+                const { hasDiscount } = calculateDiscount(product, storeId);
+                return hasDiscount;
+            });
+        }
+
         switch (filters?.sortBy) {
             case 'price-asc':
-                results.sort((a, b) => (a.product.price || a.product.basePrice) - (b.product.price || b.product.basePrice));
+                results.sort((a, b) => {
+                    const priceA = calculateDiscount(a.product, a.storeId).finalPrice;
+                    const priceB = calculateDiscount(b.product, b.storeId).finalPrice;
+                    return priceA - priceB;
+                });
                 break;
             case 'price-desc':
-                results.sort((a, b) => (b.product.price || b.product.basePrice) - (a.product.price || a.product.basePrice));
+                results.sort((a, b) => {
+                    const priceA = calculateDiscount(a.product, a.storeId).finalPrice;
+                    const priceB = calculateDiscount(b.product, b.storeId).finalPrice;
+                    return priceB - priceA;
+                });
                 break;
             default:
                 break;
         }
         setFilteredList(results);
-    }, [searchTerm, category, filters, allStoreProducts, selectedMarkets]);
+    }, [searchTerm, category, filters, allStoreProducts, selectedMarkets, dealsOnly]);
 
-    // 2. Buat fungsi handler untuk menambah item ke keranjang
     const handleAddToCart = (productId: number, storeId: number) => {
         dispatch(addItemToCart({ productId, storeId, quantity: 1 }))
             .unwrap()
@@ -128,25 +224,32 @@ export const ProductGrid = ({
             {filteredList.map(({ product, storeId }) => {
                 const store = markets.find(m => m.id === storeId);
                 const storeName = store?.name || 'Unknown Store';
-                const isOutOfStock = product.stocks?.find(s => s.quantity === 0)?.quantity === 0;
+                const isOutOfStock = product.stocks?.find(s => s.storeId === storeId)?.quantity === 0;
+                const { finalPrice, hasDiscount, discountType } = calculateDiscount(product, storeId);
+
 
                 return (
                     <div
                         key={`${product.id}-${storeId}`}
                         className={`rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 ${isOutOfStock ? 'bg-gray-100 text-gray-400' : 'bg-white'}`}
                     >
-                        <Link href={`/product/${product.id}`} className="block">
+                        <Link href={`/product/${product.id}?store=${storeId}`} className="block">
                             <div className="relative h-48 overflow-hidden">
                                 <img
                                     src={product.images?.[0]?.imageUrl}
                                     alt={product.name}
                                     className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300"
                                 />
+                                {discountType === 'BUY1GET1' && (
+                                    <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+                                        BUY 1 GET 1
+                                    </div>
+                                )}
                             </div>
                         </Link>
                         <div className="p-4">
-                            <Link href={`/product/${product.id}`} className="block">
-                                <h3 className="font-medium hover:text-green-600">{product.name}</h3>
+                            <Link href={`/product/${product.id}?store=${storeId}`} className="block">
+                                <h3 className="font-medium hover:text-green-600 truncate">{product.name}</h3>
                                 <p className="text-sm text-gray-500 italic">{storeName}</p>
                                 {isOutOfStock && (
                                     <p className="text-xs text-red-500 font-semibold">Out of stock</p>
@@ -154,29 +257,28 @@ export const ProductGrid = ({
                             </Link>
                             <div className="mt-2 flex justify-between items-center">
                                 <div>
-                                    {product.price ? (
-                                        <div className="flex items-center">
+                                    {hasDiscount && discountType !== 'BUY1GET1' ? (
+                                        <div className="flex items-baseline gap-2">
                                             <span className="font-bold text-red-500">
-                                                Rp.{product.price.toFixed(0)}
+                                                Rp {finalPrice.toLocaleString()}
                                             </span>
-                                            <span className="text-gray-400 line-through ml-2 text-sm">
-                                                Rp.{product.basePrice.toFixed(0)}
+                                            <span className="text-gray-400 line-through text-sm">
+                                                Rp {product.basePrice.toLocaleString()}
                                             </span>
                                         </div>
                                     ) : (
                                         <span className="font-bold text-green-600">
-                                            Rp.{product.basePrice.toFixed(0)}
+                                            Rp {product.basePrice.toLocaleString()}
                                         </span>
                                     )}
                                 </div>
-                                {/* 3. Hubungkan tombol ke handler */}
                                 <button
                                     onClick={() => handleAddToCart(product.id, storeId)}
                                     disabled={isOutOfStock}
                                     className={`rounded-full p-2 transition-colors ${isOutOfStock
                                         ? 'bg-gray-300 cursor-not-allowed'
                                         : 'bg-green-100 hover:bg-green-200 text-green-700'
-                                    }`}
+                                        }`}
                                 >
                                     <ShoppingCartIcon className="h-5 w-5" />
                                 </button>
