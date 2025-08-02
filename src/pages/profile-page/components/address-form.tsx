@@ -1,12 +1,28 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { IAddress } from "@/lib/interface/address";
 import { LoaderIcon } from "lucide-react";
+import "leaflet/dist/leaflet.css";
+import { useDebounce } from "use-debounce";
+
+// Buat komponen peta menjadi dinamis
+const MapWithNoSSR = dynamic(
+  () => import("../../../components/common/MapPicker"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex justify-center items-center h-full">
+        <LoaderIcon className="h-8 w-8 animate-spin" />
+      </div>
+    ),
+  }
+);
 
 interface AddressFormProps {
   address?: IAddress | null;
   onClose: () => void;
-  onSave: (data: Omit<IAddress, 'id' | 'latitude' | 'longitude'>) => void;
+  onSave: (data: Partial<IAddress>) => void;
   isLoading: boolean;
 }
 
@@ -24,49 +40,77 @@ export default function AddressForm({
     city: "",
     province: "",
     postalCode: "",
+    latitude: -6.2088,
+    longitude: 106.8456,
     isMain: false,
   });
 
+  const [cityQuery, setCityQuery] = useState("");
+  const [debouncedCityQuery] = useDebounce(cityQuery, 700);
+
   useEffect(() => {
     if (address) {
-      setFormData({
-        label: address.label,
-        recipient: address.recipient,
-        phone: address.phone,
-        addressLine: address.addressLine,
-        city: address.city,
-        province: address.province,
-        postalCode: address.postalCode,
-        isMain: address.isMain,
-      });
+      setFormData({ ...address });
     }
   }, [address]);
+
+  useEffect(() => {
+    if (debouncedCityQuery) {
+      const fetchCoordinates = async () => {
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?city=${debouncedCityQuery}&format=json&limit=1`
+          );
+          const data = await response.json();
+          if (data && data.length > 0) {
+            const { lat, lon } = data[0];
+            setFormData((prev) => ({
+              ...prev,
+              latitude: parseFloat(lat),
+              longitude: parseFloat(lon),
+            }));
+          }
+        } catch (error) {
+          console.error("Failed to fetch coordinates:", error);
+        }
+      };
+      fetchCoordinates();
+    }
+  }, [debouncedCityQuery]);
+
+  const handleLocationSelect = (lat: number, lng: number) => {
+    setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng }));
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value, type } = e.target;
     const isCheckbox = type === "checkbox";
-    setFormData((prev) => ({
-      ...prev,
-      [name]: isCheckbox ? (e.target as HTMLInputElement).checked : value,
-    }));
+    const finalValue = isCheckbox
+      ? (e.target as HTMLInputElement).checked
+      : value;
+
+    setFormData((prev) => ({ ...prev, [name]: finalValue }));
+    if (name === "city") {
+      setCityQuery(value);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData); // Kirim formData langsung
+    onSave(formData);
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white rounded-lg p-8 w-full max-w-lg">
-        <h2 className="text-x1 font-bold mb-6">
-          {address ? "Edit Alamat" : "Tambah Alamat Baru"}
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="bg-white rounded-lg p-6 w-full border border-gray-200 shadow-sm">
+      <h2 className="text-xl font-semibold mb-6 text-gray-800 border-b pb-4">
+        {address ? "Edit Address" : "Add New Address"}
+      </h2>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Label Alamat
             </label>
             <input
@@ -74,13 +118,13 @@ export default function AddressForm({
               name="label"
               value={formData.label}
               onChange={handleChange}
-              className="mt-1 w-full border p-2 rounded-md text-black"
+              className="w-full border border-gray-300 p-2 rounded-md text-black"
               placeholder="Contoh: Rumah, Kantor"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Nama Penerima
             </label>
             <input
@@ -88,12 +132,12 @@ export default function AddressForm({
               name="recipient"
               value={formData.recipient}
               onChange={handleChange}
-              className="mt-1 w-full border p-2 rounded-md text-black"
+              className="w-full border border-gray-300 p-2 rounded-md text-black"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Nomor Telepon
             </label>
             <input
@@ -101,52 +145,50 @@ export default function AddressForm({
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              className="mt-1 w-full border p-2 rounded-md text-black"
+              className="w-full border border-gray-300 p-2 rounded-md text-black"
               required
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Detail Alamat
             </label>
             <textarea
               name="addressLine"
               value={formData.addressLine}
               onChange={handleChange}
-              className="mt-1 w-full border p-2 rounded-md text-black"
+              className="w-full border border-gray-300 p-2 rounded-md text-black"
               required
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Kota/Kabupaten
-              </label>
-              <input
-                type="text"
-                name="city"
-                value={formData.city}
-                onChange={handleChange}
-                className="mt-1 w-full border p-2 rounded-md text-black"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Provinsi
-              </label>
-              <input
-                type="text"
-                name="province"
-                value={formData.province}
-                onChange={handleChange}
-                className="mt-1 w-full border p-2 rounded-md text-black"
-                required
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Kota/Kabupaten
+            </label>
+            <input
+              type="text"
+              name="city"
+              value={formData.city}
+              onChange={handleChange}
+              className="w-full border border-gray-300 p-2 rounded-md text-black"
+              required
+            />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Provinsi
+            </label>
+            <input
+              type="text"
+              name="province"
+              value={formData.province}
+              onChange={handleChange}
+              className="w-full border border-gray-300 p-2 rounded-md text-black"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Kode Pos
             </label>
             <input
@@ -154,44 +196,62 @@ export default function AddressForm({
               name="postalCode"
               value={formData.postalCode}
               onChange={handleChange}
-              className="mt-1 w-full border p-2 rounded-md text-black"
+              className="w-full border border-gray-300 p-2 rounded-md text-black"
               required
             />
           </div>
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              name="isMain"
-              checked={formData.isMain}
-              onChange={handleChange}
-              className="h-4 w-4 text-green-600"
+        </div>
+        <div className="space-y-4">
+          <h3 className="text-md font-semibold text-gray-800">
+            Tentukan Lokasi di Peta
+          </h3>
+          <div className="relative h-[500px] mt-2 rounded-lg overflow-hidden z-0 border">
+            <MapWithNoSSR
+              latitude={formData.latitude}
+              longitude={formData.longitude}
+              onLocationSelect={handleLocationSelect}
             />
-            <label className="ml-2 text-sm text-gray-900">
-              Jadikan alamat utama
-            </label>
           </div>
-
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300"
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center"
-              disabled={isLoading}
-            >
-              {isLoading && (
-                <LoaderIcon className="animate-spin h-5 w-5 mr-2" />
-              )}
-              Simpan Alamat
-            </button>
-          </div>
-        </form>
-      </div>
+          <p className="text-xs text-gray-500 text-center">
+            Klik peta untuk menandai lokasi Anda
+          </p>
+        </div>
+        <div className="flex items-center">
+          <input
+            id="isMain"
+            name="isMain"
+            type="checkbox"
+            checked={formData.isMain}
+            onChange={handleChange}
+            className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+          />
+          <label htmlFor="isMain" className="ml-2 block text-sm text-gray-900">
+            Jadikan alamat utama
+          </label>
+        </div>
+        <div className="flex justify-end space-x-4 pt-4 border-t mt-6">
+          <button
+            type="button"
+            onClick={onClose}
+            className="bg-white text-gray-800 px-6 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 font-semibold transition"
+          >
+            Batal
+          </button>
+          <button
+            type="submit"
+            className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 flex items-center min-w-[120px] justify-center font-semibold transition"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <LoaderIcon className="animate-spin h-5 w-5" />
+            ) : address ? (
+              "Simpan Perubahan"
+            ) : (
+              "Simpan Alamat"
+            )}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
