@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { StockReportFilters } from '@/components/reports/StockReportFilters';
 import { DataTable } from '@/components/common/DataTable';
 import axios from 'axios';
-import { apiUrl } from '../config';
+import { apiUrl } from '../../config';
 import { useAppSelector } from '@/lib/redux/hooks';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 

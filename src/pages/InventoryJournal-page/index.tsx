@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { DataTable } from '@/components/common/DataTable';
-import { apiUrl } from '../config';
+import { apiUrl } from '../../config';
 import axios from 'axios';
 import { useAppSelector } from '@/lib/redux/hooks';
 import LoadingSpinner from '@/components/common/LoadingSpinner';

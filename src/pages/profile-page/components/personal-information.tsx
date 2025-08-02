@@ -12,7 +12,7 @@ import {
   CopyIcon,
 } from "lucide-react";
 import axios from "axios";
-import { apiUrl } from "@/pages/config";
+import { apiUrl } from "@/config";
 
 const defaultAvatarSvg =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a0aec0' stroke-width='1.5'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E";

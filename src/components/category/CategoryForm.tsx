@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { apiUrl} from '@/pages/config';
+import { apiUrl} from '@/config';
 import { useAppSelector } from '@/lib/redux/hooks';
 
 export const CategoryForm = ({

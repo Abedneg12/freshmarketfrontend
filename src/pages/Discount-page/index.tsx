@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { DiscountForm } from '../../components/discount/DiscountForm';
 import { PlusIcon, SearchIcon } from 'lucide-react';
-import { apiUrl } from '../config';
+import { apiUrl } from '../../config';
 import { DataTable } from '@/components/common/DataTable';
 import axios from 'axios';
 import { Discount } from '@/lib/interface/discount.type';

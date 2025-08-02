@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { StatsOverview } from './components/StatsOverview';
-import { ReportChart } from './components/ReportChart';
+import { StatsOverview } from '../../components/dashboard/StatsOverview';
+import { ReportChart } from '../../components/dashboard/ReportChart';
 import axios from 'axios';
-import { apiUrl } from '../config';
+import { apiUrl } from '../../config';
 import { useAppSelector } from '@/lib/redux/hooks';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 

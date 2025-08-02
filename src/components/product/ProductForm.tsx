@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { XIcon, PlusIcon, ImageIcon, MinusIcon } from 'lucide-react';
 import { Market } from '@/lib/interface/market';
-import { apiUrl } from '@/pages/config';
+import { apiUrl } from '@/config';
 import { Category } from '@/lib/interface/category.type';
 import axios from 'axios';
 import { Product, StoreStock } from '@/lib/interface/product.type';
@@ -24,7 +24,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 }) => {
   const { token } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
-  const { data: markets, loading: storesLoading } = useAppSelector((state) => state.store);
+  const { data: markets, loading: storesLoading } = useAppSelector((state) => state.Market);
   const [categories, setCategories] = useState<Category[]>([]);
   const [storeAllocations, setStoreAllocations] = useState<StoreStock[]>([]);
   const [selectedStore, setSelectedStore] = useState('');
@@ -43,6 +43,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   const [transactionType, setTransactionType] = useState<'IN' | 'OUT'>('IN');
 
   useEffect(() => {
+    dispatch(fetchMarket());
+    console.log(markets);
     if (editingProduct) {
       setName(editingProduct.name || '');
       setCategoryId(editingProduct.category?.id?.toString() || '');
@@ -168,7 +170,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     };
     fetchCategories();
     dispatch(fetchMarket());
-    dispatch(fetchRecommendations());
   }, [dispatch]);
 
   return (
