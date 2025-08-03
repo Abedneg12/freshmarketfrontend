@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { ShoppingCartIcon } from 'lucide-react';
 import { Product, storeProduct } from '@/lib/interface/product.type';
@@ -9,7 +9,6 @@ import { fetchStoreProducts } from '@/lib/redux/slice/storeProductSlice';
 import { fetchMarket } from '@/lib/redux/slice/storeSlice';
 import { addItemToCart } from '@/lib/redux/slice/cartSlice';
 import { toast } from 'react-toastify';
-import { Discount } from '@/lib/interface/discount.type';
 
 interface ProductGridProps {
     category: string;
@@ -102,7 +101,6 @@ export const ProductGrid = ({
 }: ProductGridProps) => {
     const dispatch = useAppDispatch();
     const [loading, setLoading] = useState(true);
-    const [filteredList, setFilteredList] = useState<{ product: Product; storeId: number }[]>([]);
     const [allStoreProducts, setAllStoreProducts] = useState<storeProduct[]>([]);
     const { data: markets } = useAppSelector((state) => state.Market);
 
@@ -115,35 +113,24 @@ export const ProductGrid = ({
             if (storeId) {
                 const result = await dispatch(fetchStoreProducts(storeId)).unwrap();
                 setAllStoreProducts([result]);
-                setLoading(false);
-                return;
             } else {
-
-                const all: storeProduct[] = [];
-                for (const store of markets) {
-                    const result = await dispatch(fetchStoreProducts(store.id)).unwrap();
-                    if (Array.isArray(result)) {
-                        all.push(...result);
-                    } else {
-                        all.push(result);
-                    }
-                }
-                setAllStoreProducts(all);
-                setLoading(false);
+                const promises = markets.map(store => dispatch(fetchStoreProducts(store.id)).unwrap());
+                const results = await Promise.all(promises);
+                setAllStoreProducts(results.flat());
             }
+            setLoading(false);
         };
         fetchAll();
-    }, [markets, dispatch]);
+    }, [markets, dispatch, storeId]);
 
-    useEffect(() => {
+    const filteredList = useMemo(() => {
         const allFlattened: { product: Product; storeId: number }[] = [];
         allStoreProducts.forEach(store => {
             store.products.forEach(product => {
                 allFlattened.push({ product, storeId: store.id });
             });
         });
-        console.log('All Flattened Products:', allFlattened);
-        console.log('Selected Markets:', allStoreProducts);
+
         let results = [...allFlattened];
         if (selectedMarkets && selectedMarkets.length > 0) {
             results = results.filter(p => selectedMarkets.includes(String(p.storeId)));
@@ -181,10 +168,10 @@ export const ProductGrid = ({
             default:
                 break;
         }
-        setFilteredList(results);
+        return results;
     }, [searchTerm, category, filters, allStoreProducts, selectedMarkets, dealsOnly]);
 
-    const handleAddToCart = (productId: number, storeId: number) => {
+    const handleAddToCart = useCallback((productId: number, storeId: number) => {
         dispatch(addItemToCart({ productId, storeId, quantity: 1 }))
             .unwrap()
             .then(() => {
@@ -193,7 +180,7 @@ export const ProductGrid = ({
             .catch((error) => {
                 toast.error(error.message || 'Gagal menambahkan produk.');
             });
-    };
+    }, [dispatch]);
 
 
     if (loading) {

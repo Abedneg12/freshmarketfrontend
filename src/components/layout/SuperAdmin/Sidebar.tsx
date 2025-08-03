@@ -33,7 +33,7 @@ export default function Sidebar({ showMenu, setShowMenu }: SidebarProps) {
       name: "Dashboard",
       icon: LayoutDashboardIcon,
       id: "dashboard",
-      path: "/super-admin/dashboard",
+      path: "/super-admin",
     },
     {
       name: "Order",
