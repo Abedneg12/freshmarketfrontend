@@ -33,10 +33,12 @@ export default function StoreDetail() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8 animate-pulse">
-        <div className="h-64 bg-gray-200 rounded-lg mb-8"></div>
-        <div className="h-8 bg-gray-200 w-1/3 rounded mb-4"></div>
-        <div className="h-4 bg-gray-200 w-2/3 rounded mb-8"></div>
+      <div className='bg-white'>
+        <div className="container mx-auto px-4 py-8 animate-pulse bg-white">
+          <div className="h-64 bg-gray-200 rounded-lg mb-8"></div>
+          <div className="h-8 bg-gray-200 w-1/3 rounded mb-4"></div>
+          <div className="h-4 bg-gray-200 w-2/3 rounded mb-8"></div>
+        </div>
       </div>
     );
   }
@@ -58,7 +60,7 @@ export default function StoreDetail() {
   }
 
   return (
-    <div className="bg-white">
+    <div className="bg-white text-gray-900">
       {/* Market Hero */}
       <div className="relative h-64 overflow-hidden">
         <img src={store.imageUrl || '/placeholder-market.jpg'} alt={store.name} className="w-full h-full object-cover" />
@@ -95,7 +97,7 @@ export default function StoreDetail() {
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Market Products</h2>
           </div>
-          <ProductGrid category="all" storeId={Number(id)} searchTerm="" filters={{ sortBy: 'popular' }}/>
+          <ProductGrid category="all" storeId={Number(id)} searchTerm="" filters={{ sortBy: 'popular' }} />
         </div>
       </div>
     </div>

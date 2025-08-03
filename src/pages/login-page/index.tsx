@@ -29,6 +29,8 @@ useEffect(() => {
     const redirectUrl = searchParams?.get("redirect_url");
     if (redirectUrl) {
       router.push(redirectUrl);
+    } else if (user?.role === "SUPER_ADMIN") {
+      router.push("/super-admin"); // ganti sesuai kebutuhanmu
     } else if (user?.role === "STORE_ADMIN") {
       router.push("/store-admin"); // ganti sesuai kebutuhanmu
     } else {

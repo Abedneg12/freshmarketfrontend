@@ -1,117 +1,80 @@
+'use client';
+
 import React, { useEffect, useState } from 'react';
-import { StatsOverview } from '../../components/dashboard/StatsOverview';
-import { ReportChart } from '../../components/dashboard/ReportChart';
 import axios from 'axios';
 import { apiUrl } from '../../config';
 import { useAppSelector } from '@/lib/redux/hooks';
+import { ReportChart } from '@/components/reports/ReportChart';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import { format } from 'date-fns';
+import { MonthlyReportDataItem, MonthlySalesByCategoryReport } from '@/lib/interface/report.type';
 
-// Interfaces for API data
-interface MonthlyReportDataItem {
-  monthYear: string; // "2023-01"
-  totalSales: number;
-}
-
-interface CategoryReportDataItem {
-  name: string;
-  totalSales: number;
-  quantitySold: number;
+interface DashboardSummary {
+  totalRevenue: number;
+  totalProductsSold: number;
 }
 
-interface MonthlySalesByCategoryReport {
-  monthYear: string;
-  categories: CategoryReportDataItem[];
-}
-
-// Interfaces for product sales API data
-interface ProductReportDataItem {
-  name: string;
-  totalSales: number;
-  quantitySold: number;
-}
-interface MonthlySalesByProductReport {
-  monthYear: string;
-  products: ProductReportDataItem[];
-}
-interface ChartData {
-  name: string;
-  revenue: number;
-  orders: number;
-}
+const StatCard = ({ title, value }: { title: string; value: string | number; }) => (
+  <div className="bg-white p-6 rounded-lg shadow-sm">
+    <h3 className="text-sm font-medium text-gray-500 truncate">{title}</h3>
+    <p className="mt-1 text-3xl font-semibold text-gray-900">{value}</p>
+  </div>
+);
 
 export default function DashboardPage() {
   const { token } = useAppSelector((state) => state.auth);
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [monthlySalesData, setMonthlySalesData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [revenueData, setRevenueData] = useState<ChartData[]>([]);
-  const [categoryData, setCategoryData] = useState<ChartData[]>([]);
-  const [productData, setProductData] = useState<ChartData[]>([]);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      setError("Authentication token not found.");
+      return;
+    }
 
     const fetchDashboardData = async () => {
       setLoading(true);
       setError(null);
+
+      const headers = { Authorization: `Bearer ${token}` };
+      const currentYear = new Date().getFullYear();
+      const params = { year: currentYear };
+
       try {
-        const year = new Date().getFullYear();
-        const headers = { Authorization: `Bearer ${token}` };
-        const params = { year };
-
-        const [monthlyRes, categoryRes, productRes] = await Promise.all([
-          axios.get(`${apiUrl}/reports/monthly-sales`, { headers, params }),
-          axios.get(`${apiUrl}/reports/monthly-sales-by-category`, { headers, params }),
-          axios.get(`${apiUrl}/reports/monthly-sales-by-product`, { headers, params }),
+        const [monthlySalesRes, categorySalesRes] = await Promise.all([
+          axios.get<MonthlyReportDataItem[]>(`${apiUrl}/sales/monthly-sales`, { headers, params }),
+          axios.get<MonthlySalesByCategoryReport[]>(`${apiUrl}/sales/monthly-sales-by-category`, { headers, params }),
         ]);
+        
+        // 1. Process Monthly Sales for Chart and Total Revenue
+        const monthlySales = monthlySalesRes.data;
+        const totalRevenue = monthlySales.reduce((acc, month) => acc + month.totalSales, 0);
 
-        // Process monthly sales data for revenue chart
-        const fetchedMonthlyData = monthlyRes.data as MonthlyReportDataItem[];
-        const transformedRevenueData = fetchedMonthlyData.map(item => ({
-          name: new Date(item.monthYear).toLocaleString('default', { month: 'short' }),
+        const chartData = monthlySales.map(item => ({
+          name: format(new Date(item.monthYear), 'MMM'),
           revenue: item.totalSales,
-          orders: 0, // API doesn't provide order count, so default to 0
         })).sort((a, b) => new Date(`2000-${a.name}-01`).getTime() - new Date(`2000-${b.name}-01`).getTime());
-        setRevenueData(transformedRevenueData);
+        setMonthlySalesData(chartData);
 
-        // Process and aggregate category sales data for category chart
-        const fetchedCategoryData = categoryRes.data as MonthlySalesByCategoryReport[];
-        const aggregatedCategoryData: { [key: string]: { revenue: number, orders: number } } = {};
-        fetchedCategoryData.forEach(month => {
-          month.categories.forEach(cat => {
-            if (!aggregatedCategoryData[cat.name]) {
-              aggregatedCategoryData[cat.name] = { revenue: 0, orders: 0 };
-            }
-            aggregatedCategoryData[cat.name].revenue += cat.totalSales;
-            aggregatedCategoryData[cat.name].orders += cat.quantitySold;
-          });
-        });
-        const transformedCategoryData = Object.entries(aggregatedCategoryData)
-          .map(([name, data]) => ({ name, ...data }))
-          .sort((a, b) => b.revenue - a.revenue)
-          .slice(0, 7); // Show top 7 categories
-        setCategoryData(transformedCategoryData);
+        // 2. Process Category Sales for Total Products Sold
+        console.log('Category Sales Data:', categorySalesRes.data);
+        const categorySales = categorySalesRes.data;
+        const totalProductsSold = categorySales.reduce((acc, month) => {
+          return acc + month.categories.reduce((catAcc, category) => catAcc + category.quantitySold, 0);
+        }, 0);
 
-        // Process and aggregate product sales data for product chart
-        const fetchedProductData = productRes.data as MonthlySalesByProductReport[];
-        const aggregatedProductData: { [key: string]: { revenue: number, orders: number } } = {};
-        fetchedProductData.forEach(month => {
-          month.products.forEach(prod => {
-            if (!aggregatedProductData[prod.name]) {
-              aggregatedProductData[prod.name] = { revenue: 0, orders: 0 };
-            }
-            aggregatedProductData[prod.name].revenue += prod.totalSales;
-            aggregatedProductData[prod.name].orders += prod.quantitySold;
-          });
+        // 3. Set the summary state
+        setSummary({
+          totalRevenue,
+          totalProductsSold,
         });
-        const transformedProductData = Object.entries(aggregatedProductData)
-          .map(([name, data]) => ({ name, ...data }))
-          .sort((a, b) => b.revenue - a.revenue)
-          .slice(0, 7); // Show top 7 products
-        setProductData(transformedProductData);
 
       } catch (err: any) {
-        console.error("Failed to fetch dashboard data:", err);
-        setError(err.response?.data?.message || "An error occurred while fetching dashboard data.");
+        console.error('Failed to fetch dashboard data:', err);
+        setError(err.response?.data?.message || 'Failed to load dashboard data.');
       } finally {
         setLoading(false);
       }
@@ -120,32 +83,37 @@ export default function DashboardPage() {
     fetchDashboardData();
   }, [token]);
 
+  const formatCurrency = (value: number) => new Intl.NumberFormat('id-ID', {
+    style: 'currency', currency: 'IDR', minimumFractionDigits: 0,
+  }).format(value);
+
+  if (loading) return <LoadingSpinner />;
+  if (error) return <div className="text-center text-red-600 p-8">{error}</div>;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 text-black">
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">
-          Dashboard Overview
-        </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          A summary of your grocery business performance.
+        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <p className="mt-2 text-sm text-gray-500">
+          Welcome back! Here's a summary of your business performance for the year.
         </p>
       </div>
-      {loading ? (
-        <LoadingSpinner />
-      ) : error ? (
-        <div className="text-center text-red-600 py-8 bg-red-50 rounded-lg">{error}</div>
-      ) : (
-        <>
-          <StatsOverview />
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-            <ReportChart data={revenueData} type="line" title="Revenue Trend (This Year)" />
-            <ReportChart data={categoryData} type="bar" title="Top Categories by Revenue" />
-            <div className="lg:col-span-2">
-              <ReportChart data={productData} type="bar" title="Top Products by Revenue" />
-            </div>
+
+      {/* --- Key Stats --- */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <StatCard title="Total Revenue (YTD)" value={formatCurrency(summary?.totalRevenue || 0)} />
+        <StatCard title="Total Products Sold (YTD)" value={summary?.totalProductsSold || 0} />
+      </div>
+
+      {/* --- Charts --- */}
+      <div className="grid grid-cols-1">
+        <div className="bg-white p-6 rounded-lg shadow-sm">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Monthly Sales Performance ({new Date().getFullYear()})</h3>
+          <div style={{ height: '350px' }}>
+            <ReportChart data={monthlySalesData} type="line" title="" />
           </div>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
-};
+}

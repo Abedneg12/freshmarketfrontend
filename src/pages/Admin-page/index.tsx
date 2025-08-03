@@ -6,7 +6,7 @@ import { DataTable } from '@/components/common/DataTable';
 import { Market } from '@/lib/interface/market';
 import { useAppSelector } from '@/lib/redux/hooks';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
-import { Admin, StoreAdminAssignment } from '@/lib/interface/admins.type';
+import { Admin } from '@/lib/interface/admins.type';
 import { toast } from 'sonner';
 
 export default function AdminsPage() {
@@ -185,7 +185,7 @@ export default function AdminsPage() {
     <div className="space-y-6">
       {/* MODAL KONFIRMASI DELETE */}
       {deleteTargetId !== null && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 text-gray-900">
           <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full">
             <h2 className="text-lg font-semibold mb-2">Konfirmasi Hapus Admin</h2>
             <p className="mb-4 text-gray-700">

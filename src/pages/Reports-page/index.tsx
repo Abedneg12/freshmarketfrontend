@@ -4,35 +4,7 @@ import { ReportChart } from '@/components/reports/ReportChart';
 import axios from 'axios';
 import { apiUrl} from '../../config'; // Assuming config is in the parent directory
 import { useAppSelector } from '@/lib/redux/hooks';
-
-// Define interfaces for the report data structures from your backend
-interface MonthlyReportDataItem {
-  monthYear: string; // e.g., "2023-01"
-  totalSales: number;
-  stores: { name: string; totalSales: number }[];
-}
-
-interface CategoryReportDataItem {
-  name: string; // Category name
-  totalSales: number;
-  quantitySold: number;
-}
-
-interface MonthlySalesByCategoryReport {
-  monthYear: string;
-  categories: CategoryReportDataItem[];
-}
-
-interface ProductReportDataItem {
-  name: string; // Product name
-  totalSales: number;
-  quantitySold: number;
-}
-
-interface MonthlySalesByProductReport {
-  monthYear: string;
-  products: ProductReportDataItem[];
-}
+import { MonthlyReportDataItem, MonthlySalesByCategoryReport, MonthlySalesByProductReport } from '@/lib/interface/report.type';
 
 export default function ReportsPage() {
   const { token } = useAppSelector((state) => state.auth);
@@ -48,6 +20,8 @@ export default function ReportsPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const availableYears = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
 
   const handleFilterChange = (filters: { year?: number; storeId?: number }) => {
     setSelectedFilters(prev => ({
@@ -184,7 +158,11 @@ export default function ReportsPage() {
           View detailed reports and analyze store performance.
         </p>
       </div>
-      <ReportFilters onFilterChange={handleFilterChange} />
+      <ReportFilters
+        onFilterChange={handleFilterChange}
+        availableYears={availableYears} // Pass the years to the filters component
+        selectedYear={selectedFilters.year}
+      />
 
       {loading && <div className="text-center text-gray-500 py-8">Loading reports...</div>}
       {error && <div className="text-center text-red-600 py-8">{error}</div>}

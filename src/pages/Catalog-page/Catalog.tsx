@@ -21,24 +21,16 @@ export default function CatalogContent() {
   });
 
   const categories = useAppSelector((state) => state.category.data);
+  // Move the hook call to the top level
+  const markets = useAppSelector((state) => state.Market.data);
 
   useEffect(() => {
     dispatch(fetchCategory());
   }, [dispatch]);
 
-  useEffect(() => {
-    if (searchParams?.get("deals") === "true") {
-      // Handle deals filter
-    }
-    if (searchParams?.get("promo")) {
-      // Handle promo code
-    }
-  }, [searchParams]);
-
   return (
     <div className="bg-white text-gray-900">
       <div className="container mx-auto px-4 py-8">
-        {/* Deals Header - Only show when deals=true */}
         {searchParams?.get("deals") === "true" && (
           <div className="mb-8 bg-red-50 rounded-xl p-8 text-center">
             <span className="text-red-600 font-medium text-sm uppercase tracking-wide">
@@ -55,7 +47,6 @@ export default function CatalogContent() {
         )}
 
         <div className="flex flex-col md:flex-row gap-6">
-          {/* Mobile filters button */}
           {!searchParams?.get("deals") && (
             <div className="md:hidden mb-4">
               <button
@@ -68,7 +59,6 @@ export default function CatalogContent() {
             </div>
           )}
 
-          {/* Filters sidebar - hide on deals page */}
           {!searchParams?.get("deals") && (
             <div className={`${showFilters ? "block" : "hidden"} md:block md:w-1/4 lg:w-1/5`}>
               <div className="sticky top-24">
@@ -78,18 +68,27 @@ export default function CatalogContent() {
                     <XIcon className="h-5 w-5" />
                   </button>
                 </div>
-                {/* Categories */}
                 <div className="mb-6">
                   <h3 className="text-sm font-semibold text-gray-900 mb-3">Categories</h3>
                   <ul className="space-y-2">
+                    <li key="all">
+                      <button
+                        className={`text-sm w-full text-left py-1 px-2 rounded-md ${activeCategory === "all"
+                          ? "bg-green-50 text-green-700 font-medium"
+                          : "text-gray-600 hover:bg-gray-50"
+                          }`}
+                        onClick={() => setActiveCategory("all")}
+                      >
+                        All Categories
+                      </button>
+                    </li>
                     {categories.map((category) => (
                       <li key={category.id}>
                         <button
-                          className={`text-sm w-full text-left py-1 px-2 rounded-md ${
-                            activeCategory === String(category.id)
-                              ? "bg-green-50 text-green-700 font-medium"
-                              : "text-gray-600 hover:bg-gray-50"
-                          }`}
+                          className={`text-sm w-full text-left py-1 px-2 rounded-md ${activeCategory === String(category.id)
+                            ? "bg-green-50 text-green-700 font-medium"
+                            : "text-gray-600 hover:bg-gray-50"
+                            }`}
                           onClick={() => setActiveCategory(String(category.id))}
                         >
                           {category.name}
@@ -104,15 +103,13 @@ export default function CatalogContent() {
                   setActiveCategory={setActiveCategory}
                   selectedMarkets={selectedMarkets}
                   setSelectedMarkets={setSelectedMarkets}
-                  markets={useAppSelector((state) => state.Market.data)}
+                  markets={markets} // Pass the `markets` data as a prop
                 />
               </div>
             </div>
           )}
 
-          {/* Main content */}
           <div className={`${searchParams?.get("deals") ? "w-full" : "md:w-3/4 lg:w-4/5"}`}>
-            {/* Search and sort bar - hide search on deals page */}
             <div className="mb-6 flex flex-col sm:flex-row gap-4">
               {!searchParams?.get("deals") && (
                 <div className="relative flex-grow">
@@ -141,7 +138,6 @@ export default function CatalogContent() {
               </select>
             </div>
 
-            {/* Products grid */}
             <ProductGrid
               category={activeCategory}
               searchTerm={searchTerm}
