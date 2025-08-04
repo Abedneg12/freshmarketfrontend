@@ -6,8 +6,10 @@ import { DataTable } from '@/components/common/DataTable';
 import axios from 'axios';
 import { Discount } from '@/lib/interface/discount.type';
 import { useAppSelector } from '@/lib/redux/hooks';
+import { useAuthGuard } from '@/middlewares/useAuthGuard';
 
 export default function DiscountPage() {
+  useAuthGuard({ requiredRole: ["SUPER_ADMIN", "STORE_ADMIN"], redirectTo: "/login" });
   const { token } = useAppSelector((state) => state.auth);
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);

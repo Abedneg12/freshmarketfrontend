@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import Image from "next/image";
-import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import { useAppDispatch } from "@/lib/redux/hooks";
 import { fetchProfile } from "@/lib/redux/slice/profileSlice";
 import { IMessageResponse, IUser } from "@/lib/interface/auth";
 import {
@@ -10,6 +9,8 @@ import {
   UploadCloudIcon,
   AlertCircleIcon,
   CopyIcon,
+  Camera,
+  Trash2,
 } from "lucide-react";
 import axios from "axios";
 import { apiUrl } from "@/config";
@@ -25,6 +26,8 @@ export default function PersonalInformation({
   user,
 }: PersonalInformationProps) {
   const dispatch = useAppDispatch();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState({
@@ -50,6 +53,18 @@ export default function PersonalInformation({
     }
   }, [user]);
 
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [menuRef]);
+
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -71,6 +86,27 @@ export default function PersonalInformation({
       };
       reader.readAsDataURL(file);
       setIsEditMode(true);
+      setIsMenuOpen(false);
+    }
+  };
+
+  const handleRemovePicture = async () => {
+    setIsMenuOpen(false);
+    if (!window.confirm("Apakah Anda yakin ingin menghapus foto profil?"))
+      return;
+
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`${apiUrl}/api/user/profile/picture`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSuccessMessage("Foto profil berhasil dihapus.");
+      await dispatch(fetchProfile());
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Gagal menghapus foto profil.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -177,31 +213,58 @@ export default function PersonalInformation({
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
           Foto Profil
         </h3>
-        <div className="flex items-center gap-6">
-          <img
-            src={preview || defaultAvatarSvg}
-            alt="Profile Preview"
-            className="h-20 w-20 rounded-full object-cover border-2 border-gray-200"
-          />
-          <div className="flex-1">
-            <label
-              htmlFor="profile-picture-upload"
-              className="cursor-pointer bg-white border border-gray-300 rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center"
-            >
-              <UploadCloudIcon className="h-5 w-5 mr-2" />
-              <span>Ganti Foto</span>
-            </label>
-            <input
-              id="profile-picture-upload"
-              type="file"
-              accept="image/png, image/jpeg, image/gif"
-              className="hidden"
-              onChange={handlePictureChange}
+        <div className="flex flex-col items-center justify-center space-y-4">
+          <div className="relative">
+            <img
+              src={preview || defaultAvatarSvg}
+              alt="Profile Preview"
+              className="h-32 w-32 rounded-full object-cover border-4 border-gray-200 shadow-md"
             />
-            <p className="text-xs text-gray-500 mt-2">
-              JPG, GIF, atau PNG. Ukuran maks 1MB.
-            </p>
+            <div ref={menuRef} className="absolute bottom-0 right-0">
+              <button
+                type="button"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="bg-green-500 rounded-full p-2 cursor-pointer hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              >
+                <Camera className="h-4 w-4 text-white" />
+              </button>
+
+              {isMenuOpen && (
+                <div className="absolute top-0 left-full ml-2 w-40 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-10">
+                  <div className="py-1">
+                    <label
+                      htmlFor="profile-picture-upload"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                    >
+                      <Camera className="h-4 w-4 mr-2" />
+                      Ubah Foto
+                    </label>
+                    <input
+                      id="profile-picture-upload"
+                      type="file"
+                      accept="image/png, image/jpeg, image/gif"
+                      className="hidden"
+                      onChange={handlePictureChange}
+                    />
+                    {preview && (
+                      <button
+                        type="button"
+                        onClick={handleRemovePicture}
+                        className="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Hapus Foto
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
+
+          <p className="text-xs text-gray-500">
+            JPG, GIF, atau PNG. Ukuran maks 1MB.
+          </p>
         </div>
       </div>
       <div className="space-y-6">

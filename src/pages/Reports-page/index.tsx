@@ -5,8 +5,11 @@ import axios from 'axios';
 import { apiUrl} from '../../config'; // Assuming config is in the parent directory
 import { useAppSelector } from '@/lib/redux/hooks';
 import { MonthlyReportDataItem, MonthlySalesByCategoryReport, MonthlySalesByProductReport } from '@/lib/interface/report.type';
+import { useAuthGuard } from '@/middlewares/useAuthGuard';
+
 
 export default function ReportsPage() {
+  useAuthGuard({ requiredRole: ["SUPER_ADMIN", "STORE_ADMIN"], redirectTo: "/login" });
   const { token } = useAppSelector((state) => state.auth);
   const [selectedFilters, setSelectedFilters] = useState({
     year: new Date().getFullYear(), // Default to current year

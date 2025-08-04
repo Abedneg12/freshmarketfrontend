@@ -53,7 +53,7 @@ export const fetchAllStores = createAsyncThunk<
   }
 );
 
-export const createNewStore = createAsyncThunk<Store, Omit<Store, "id">>(
+export const createNewStore = createAsyncThunk<Store, FormData>(
   "adminStores/createNewStore",
   async (storeData, { rejectWithValue }) => {
     try {
@@ -62,7 +62,10 @@ export const createNewStore = createAsyncThunk<Store, Omit<Store, "id">>(
         `${apiUrl}/api/management/stores`,
         storeData,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data", // Penting untuk unggah file
+          },
         }
       );
       return response.data;
@@ -74,16 +77,18 @@ export const createNewStore = createAsyncThunk<Store, Omit<Store, "id">>(
 
 export const updateStore = createAsyncThunk<
   Store,
-  Partial<Store> & { id: number }
->("adminStores/updateStore", async (storeData, { rejectWithValue }) => {
+  { id: number; data: FormData }
+>("adminStores/updateStore", async ({ id, data }, { rejectWithValue }) => {
   try {
     const token = localStorage.getItem("token");
-    const { id, ...data } = storeData;
     const response = await axios.put<Store>(
       `${apiUrl}/api/management/stores/${id}`,
       data,
       {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
       }
     );
     return response.data;

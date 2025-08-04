@@ -36,12 +36,6 @@ export default function Sidebar({ showMenu, setShowMenu }: SidebarProps) {
       path: "/super-admin",
     },
     {
-      name: "Order",
-      icon: NotebookPenIcon,
-      id: "reports",
-      path: "/super-admin/order",
-    },
-    {
       name: "Store Management",
       icon: StoreIcon,
       id: "store",

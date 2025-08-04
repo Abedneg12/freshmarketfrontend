@@ -4,8 +4,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { RootState } from '../store';
 
-// --- Tipe Data ---
-// Sebaiknya tipe-tipe ini berada di file interface terpusat
+
 interface Product {
   id: number;
   name: string;
@@ -19,7 +18,7 @@ interface CartItem {
   product: Product;
 }
 
-// Backend Anda mengembalikan array dari Cart, di mana setiap cart mewakili satu toko
+
 interface Cart {
     id: number;
     storeId: number;
@@ -50,7 +49,6 @@ const initialState: CartState = {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
 
-// --- Async Thunks (Sesuai dengan Router Backend) ---
 
 // GET /api/cart -> Mengambil semua item di keranjang
 export const fetchCartItems = createAsyncThunk<Cart[], void, { state: RootState }>(

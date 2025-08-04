@@ -23,21 +23,21 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-useEffect(() => {
-  if (isAuthenticated) {
-    const user = getUserFromToken();
-    const redirectUrl = searchParams?.get("redirect_url");
-    if (redirectUrl) {
-      router.push(redirectUrl);
-    } else if (user?.role === "SUPER_ADMIN") {
-      router.push("/super-admin"); // ganti sesuai kebutuhanmu
-    } else if (user?.role === "STORE_ADMIN") {
-      router.push("/store-admin"); // ganti sesuai kebutuhanmu
-    } else {
-      router.push("/");
+  useEffect(() => {
+    if (isAuthenticated) {
+      const user = getUserFromToken();
+      const redirectUrl = searchParams?.get("redirect_url");
+      if (redirectUrl) {
+        router.push(redirectUrl);
+      } else if (user?.role === "SUPER_ADMIN") {
+        router.push("/super-admin"); // ganti sesuai kebutuhanmu
+      } else if (user?.role === "STORE_ADMIN") {
+        router.push("/store-admin"); // ganti sesuai kebutuhanmu
+      } else {
+        router.push("/");
+      }
     }
-  }
-}, [isAuthenticated, router, searchParams]);
+  }, [isAuthenticated, router, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

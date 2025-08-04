@@ -11,8 +11,10 @@ import LoadingSpinner from '@/components/common/LoadingSpinner';
 import axios from 'axios';
 import { apiUrl } from '@/config';
 import { toast } from 'react-toastify';
+import { useAuthGuard } from '@/middlewares/useAuthGuard';
 
 export default function CategoryPage() {
+  useAuthGuard({ requiredRole: ["SUPER_ADMIN", "STORE_ADMIN"], redirectTo: "/login" });
   const { token, user } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const [showForm, setShowForm] = useState(false);
