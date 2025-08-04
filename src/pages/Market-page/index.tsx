@@ -97,7 +97,7 @@ export default function StoreDetail() {
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Market Products</h2>
           </div>
-          <ProductGrid category="all" storeId={Number(id)} searchTerm="" filters={{ sortBy: 'popular' }} />
+          <ProductGrid category="all" storeId={Number(id)} searchTerm="" filters={{ sortBy: 'Default' }} />
         </div>
       </div>
     </div>
