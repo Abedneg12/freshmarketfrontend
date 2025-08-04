@@ -13,28 +13,33 @@ export default function CheckoutPage() {
     const router = useRouter();
     const dispatch = useAppDispatch();
 
-    // State lokal
+    // --- State lokal ---
     const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<'BANK_TRANSFER' | 'MIDTRANS'>('BANK_TRANSFER');
-
-    // Voucher
     const [voucherInput, setVoucherInput] = useState('');
     const [voucherCode, setVoucherCode] = useState('');
     const [voucherInfo, setVoucherInfo] = useState<{ ok: boolean; msg: string }>({ ok: false, msg: '' });
 
-    // Ambil data dari Redux
+    // --- Ambil selectedCartItemIds dari localStorage ---
+    const [selectedCartItemIds, setSelectedCartItemIds] = useState<number[]>([]);
+    useEffect(() => {
+        const ids = JSON.parse(localStorage.getItem('selectedCartItemIds') || '[]');
+        setSelectedCartItemIds(ids);
+    }, []);
+
+    // --- Ambil data Redux ---
     const { carts } = useAppSelector((state) => state.cart);
     const { addresses } = useAppSelector((state) => state.address);
     const { status: orderStatus, error: orderError } = useAppSelector((state) => state.order);
 
-    // Fetch cart & address on mount
+    // --- Fetch cart & address on mount ---
     useEffect(() => {
         dispatch(fetchCartItems());
         dispatch(fetchAddresses());
         dispatch(resetOrderStatus());
     }, [dispatch]);
 
-    // Pilih alamat utama jika ada
+    // --- Pilih alamat utama jika ada ---
     useEffect(() => {
         if (addresses && addresses.length > 0) {
             const mainAddress = addresses.find(addr => addr.isMain);
@@ -42,16 +47,23 @@ export default function CheckoutPage() {
         }
     }, [addresses]);
 
-    // Subtotal dari seluruh item
-    const subtotal = useMemo(() => {
-        return carts.reduce((total, cart) =>
-            total + cart.items.reduce((itemSum, item) => itemSum + (item.product.basePrice * item.quantity), 0), 0);
-    }, [carts]);
+    // --- Filter hanya item yang dipilih user ---
+    const selectedCartItems = useMemo(() => {
+        return carts.flatMap(cart => cart.items)
+            .filter(item => selectedCartItemIds.includes(item.id));
+    }, [carts, selectedCartItemIds]);
 
-    // Ongkir flat
+    // --- Subtotal dan shipping hanya dari item yang dipilih ---
+    const subtotal = useMemo(() => {
+        return selectedCartItems.reduce(
+            (sum, item) => sum + (item.product.basePrice * item.quantity),
+            0
+        );
+    }, [selectedCartItems]);
+
     const shipping = 5000;
 
-    // Handler apply voucher (optional, hanya update di UI, backend tetap re-cek)
+    // --- Handler voucher ---
     const handleApplyVoucher = () => {
         if (!voucherInput) {
             setVoucherInfo({ ok: false, msg: 'Masukkan kode voucher.' });
@@ -60,50 +72,44 @@ export default function CheckoutPage() {
         setVoucherCode(voucherInput.trim());
         setVoucherInfo({ ok: true, msg: `Voucher "${voucherInput.trim()}" diterapkan.` });
     };
-
-    // Handler untuk hapus voucher
     const handleRemoveVoucher = () => {
         setVoucherCode('');
         setVoucherInput('');
         setVoucherInfo({ ok: false, msg: '' });
     };
 
-    // Place order
+    // --- Place order hanya untuk item yang dipilih user ---
     const handlePlaceOrder = async () => {
         if (!selectedAddressId) {
             alert("Please select a shipping address.");
             return;
         }
-        const allCartItemIds = carts.flatMap(cart => cart.items.map(item => item.id));
-        if (allCartItemIds.length === 0) {
-            alert("Your cart is empty.");
+        if (selectedCartItemIds.length === 0) {
+            alert("Tidak ada item yang dipilih untuk checkout.");
             return;
         }
-
-        // Kirim order ke backend
         const resultAction = await dispatch(createOrder({
             addressId: selectedAddressId,
             paymentMethod,
-            cartItemIds: allCartItemIds,
+            cartItemIds: selectedCartItemIds,
             voucherCode: voucherCode || undefined,
         }));
 
         if (createOrder.fulfilled.match(resultAction)) {
             const { midtransRedirectUrl, order } = resultAction.payload;
-            // Optional: tampilkan info voucher berhasil/tidak dari backend di sini!
             if (midtransRedirectUrl) {
                 window.location.href = midtransRedirectUrl;
             } else {
                 router.push(`/pembayaran/${order.id}`);
             }
         } else {
-            // Jika error voucher dari backend
-            if ( resultAction.payload && typeof resultAction.payload === 'object' &&
-            'error' in resultAction.payload &&
-            typeof resultAction.payload.error === 'string' &&
-            resultAction.payload.error.toLowerCase().includes("voucher")
+            if (
+                resultAction.payload && typeof resultAction.payload === 'object' &&
+                'error' in resultAction.payload &&
+                typeof resultAction.payload.error === 'string' &&
+                resultAction.payload.error.toLowerCase().includes("voucher")
             ) {
-            setVoucherInfo({ ok: false, msg: resultAction.payload.error });
+                setVoucherInfo({ ok: false, msg: resultAction.payload.error });
             }
         }
     };
@@ -141,14 +147,14 @@ export default function CheckoutPage() {
                             <h2 className="text-xl font-semibold mb-4 text-gray-800">Payment Method</h2>
                             <div className="space-y-4">
                                 <div onClick={() => setPaymentMethod('BANK_TRANSFER')} className={`p-4 border rounded-lg cursor-pointer transition-all flex items-center ${paymentMethod === 'BANK_TRANSFER' ? 'border-green-500 ring-2 ring-green-200' : 'border-gray-200'}`}>
-                                    <CreditCardIcon className="h-6 w-6 mr-4 text-gray-600"/>
+                                    <CreditCardIcon className="h-6 w-6 mr-4 text-gray-600" />
                                     <div>
                                         <p className="font-bold text-gray-800">Bank Transfer</p>
                                         <p className="text-sm text-gray-500">Pay via manual bank transfer.</p>
                                     </div>
                                 </div>
                                 <div onClick={() => setPaymentMethod('MIDTRANS')} className={`p-4 border rounded-lg cursor-pointer transition-all flex items-center ${paymentMethod === 'MIDTRANS' ? 'border-green-500 ring-2 ring-green-200' : 'border-gray-200'}`}>
-                                    <TruckIcon className="h-6 w-6 mr-4 text-gray-600"/>
+                                    <TruckIcon className="h-6 w-6 mr-4 text-gray-600" />
                                     <div>
                                         <p className="font-bold text-gray-800">Payment Gateway</p>
                                         <p className="text-sm text-gray-500">Use credit card, e-wallet, and more via Midtrans.</p>
@@ -201,9 +207,9 @@ export default function CheckoutPage() {
                                     <p className={`text-xs mt-1 ${voucherInfo.ok ? 'text-green-600' : 'text-red-500'}`}>{voucherInfo.msg}</p>
                                 )}
                             </div>
-                            {/* Rangkuman item */}
+                            {/* Rangkuman item: hanya item terpilih */}
                             <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                                {carts.flatMap(cart => cart.items).map(item => (
+                                {selectedCartItems.map(item => (
                                     <div key={item.id} className="flex justify-between items-center text-sm">
                                         <span className="text-gray-600 truncate pr-2">{item.product.name} <span className="text-gray-400">x{item.quantity}</span></span>
                                         <span className="text-gray-800 whitespace-nowrap">Rp {(item.product.basePrice * item.quantity).toLocaleString('id-ID')}</span>
@@ -220,7 +226,7 @@ export default function CheckoutPage() {
                                     <span className="text-gray-600">Shipping</span>
                                     <span className="text-gray-800">Rp {shipping.toLocaleString('id-ID')}</span>
                                 </div>
-                                {/* Diskon voucher (jika ingin tampilkan estimasi, perlu preview dari backend) */}
+                                {/* Diskon voucher (estimasi preview, jika ingin) */}
                             </div>
                             <div className="border-t my-4"></div>
                             <div className="flex justify-between font-bold text-lg">
