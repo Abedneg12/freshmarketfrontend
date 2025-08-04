@@ -1,3 +1,4 @@
+;"use client";
 import OrderHistoryPage from '@/pages/order-history-page'
 import React, { Suspense } from 'react'
 import withAuth from '@/components/common/Auth';

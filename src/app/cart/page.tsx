@@ -1,3 +1,4 @@
+'use client';
 import CartPage from "@/pages/cart-page";
 import React from 'react'
 import withAuth from '@/components/common/Auth';
