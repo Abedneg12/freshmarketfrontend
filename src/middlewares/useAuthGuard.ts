@@ -15,21 +15,21 @@ export function useAuthGuard(options?: AuthGuardOptions) {
     const role = localStorage.getItem("role") as UserRole | null;
 
     // Cek apakah sudah login 
-    if (!token) {
-      router.replace("/login");
-      return;
-    }
+    // if (!token) {
+    //   router.replace("/login");
+    //   return;
+    // }
 
     // Jika butuh cek role
-    if (options?.requiredRole) {
-      const allowedRoles = Array.isArray(options.requiredRole)
-        ? options.requiredRole
-        : [options.requiredRole];
+    // if (options?.requiredRole) {
+    //   const allowedRoles = Array.isArray(options.requiredRole)
+    //     ? options.requiredRole
+    //     : [options.requiredRole];
 
-      if (!role || !allowedRoles.includes(role)) {
-        router.replace(options.redirectTo || "/");
-        return;
-      }
-    }
+    //   if (!role || !allowedRoles.includes(role)) {
+    //     router.replace(options.redirectTo || "/");
+    //     return;
+    //   }
+    // }
   }, [router, options]);
 }
