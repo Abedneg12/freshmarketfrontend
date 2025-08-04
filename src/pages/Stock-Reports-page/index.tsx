@@ -5,7 +5,7 @@ import axios from 'axios';
 import { apiUrl } from '../../config';
 import { useAppSelector } from '@/lib/redux/hooks';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
-import { useAuthGuard } from '@/lib/hooks/useAuthGuard';
+import { useAuthGuard } from '@/middlewares/useAuthGuard';
 
 // Interface for the stock summary report data from the backend
 interface StockSummaryReportItem {

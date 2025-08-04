@@ -4,7 +4,7 @@ import React, { useState, type FC, useEffect } from 'react';
 import { Search, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import { fetchAdminProducts } from '@/lib/redux/slice/storeadminproductSlice';
-import { useAuthGuard } from '@/lib/hooks/useAuthGuard';
+import { useAuthGuard } from '@/middlewares/useAuthGuard';
 
 // --- Tipe Data dari Slice ---
 interface IAdminProduct {

@@ -6,7 +6,7 @@ import { fetchCartItems } from '@/lib/redux/slice/cartSlice';
 import { fetchAddresses } from '@/lib/redux/slice/addressSlice';
 import { createOrder, resetOrderStatus } from '@/lib/redux/slice/orderSlice';
 import { CreditCardIcon, TruckIcon, XCircleIcon, CheckCircle2Icon } from 'lucide-react';
-import { useAuthGuard } from '@/lib/hooks/useAuthGuard';
+import { useAuthGuard } from '@/middlewares/useAuthGuard';
 
 export default function CheckoutPage() {
     useAuthGuard();

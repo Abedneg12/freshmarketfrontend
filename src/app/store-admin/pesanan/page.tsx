@@ -12,7 +12,7 @@ import AdminOrderTable from "@/components/orders/AdminOrderTable";
 import ConfirmModal from "@/components/orders/ConfirmModal";
 import Pagination from "@/components/orders/Pagination";
 import DetailOrderModal from "@/components/orders/DetailOrderModal";
-import { useAuthGuard } from "@/lib/hooks/useAuthGuard";
+import { useAuthGuard } from "@/middlewares/useAuthGuard";
 
 
 export default function AdminOrdersPage() {

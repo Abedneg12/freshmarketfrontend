@@ -5,7 +5,7 @@ import axios from 'axios';
 import { apiUrl} from '../../config'; // Assuming config is in the parent directory
 import { useAppSelector } from '@/lib/redux/hooks';
 import { MonthlyReportDataItem, MonthlySalesByCategoryReport, MonthlySalesByProductReport } from '@/lib/interface/report.type';
-import { useAuthGuard } from '@/lib/hooks/useAuthGuard';
+import { useAuthGuard } from '@/middlewares/useAuthGuard';
 
 
 export default function ReportsPage() {

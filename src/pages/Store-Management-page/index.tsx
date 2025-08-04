@@ -13,7 +13,7 @@ import StoreTable from "@/components/market/StoreTable";
 import PaginationControls from "@/components/market/PaginationControls";
 import { Store } from "@/lib/interface/store.type";
 import { toast } from "sonner";
-import { useAuthGuard } from "@/lib/hooks/useAuthGuard";
+import { useAuthGuard } from "@/middlewares/useAuthGuard";
 
 // Gunakan Dynamic Import untuk StoreForm ---
 const StoreForm = dynamic(() => import("@/components/market/StoreForm"), {

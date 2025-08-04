@@ -16,7 +16,7 @@ import {
   removeItemFromCart,
   clearCartByStore,
 } from '@/lib/redux/slice/cartSlice';
-import { useAuthGuard } from '@/lib/hooks/useAuthGuard';
+import { useAuthGuard } from '@/middlewares/useAuthGuard';
 
 const formatRupiah = (amount: number) =>
   `Rp ${amount.toLocaleString('id-ID')}`;

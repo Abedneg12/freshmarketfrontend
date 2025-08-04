@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import { fetchUserOrders } from '@/lib/redux/slice/orderSlice';
 import { ChevronLeft, ChevronRight, ShoppingBagIcon, Filter, Search } from 'lucide-react';
-import { useAuthGuard } from '@/lib/hooks/useAuthGuard';
+import { useAuthGuard } from '@/middlewares/useAuthGuard';
 
 // --- Tipe Data dari Slice ---
 type OrderStatus =
