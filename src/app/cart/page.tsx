@@ -1,9 +1,10 @@
+'use client';
 import CartPage from "@/pages/cart-page";
+import React from 'react'
+import withAuth from '@/components/common/Auth';
 
-export default function Cart() {
-  return (
-    <div>
-        <CartPage />
-    </div>
-  );
-}
+const Page = () => {
+  return <CartPage />;
+};
+
+export default withAuth(Page);

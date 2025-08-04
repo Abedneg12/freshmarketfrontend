@@ -13,9 +13,10 @@ import ConfirmModal from "@/components/orders/ConfirmModal";
 import Pagination from "@/components/orders/Pagination";
 import DetailOrderModal from "@/components/orders/DetailOrderModal";
 import { useAuthGuard } from "@/middlewares/useAuthGuard";
+import withStoreAdminAuth from '@/components/common/StoreAdminAuth';
 
 
-export default function AdminOrdersPage() {
+function AdminOrdersPage() {
   useAuthGuard({ requiredRole: ["STORE_ADMIN"], redirectTo: "/login" });
   const dispatch = useAppDispatch();
   const { orders, pagination, loading, error, actionLoading, actionError, actionSuccess } = useAppSelector((state) => state.adminorders);
@@ -153,3 +154,5 @@ export default function AdminOrdersPage() {
     </div>
   );
 }
+
+export default withStoreAdminAuth(AdminOrdersPage);

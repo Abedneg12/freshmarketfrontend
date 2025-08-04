@@ -1,9 +1,9 @@
 'use client';
 import CategoryPage from '@/pages/Category-page/Category';
-import withSuperAdminAuth from '@/components/common/SuperAdminAuth';
+import withStoreAdminAuth from '@/components/common/StoreAdminAuth';
 
 const Page = () => {
   return <CategoryPage />;
 };
 
-export default (Page);
+export default withStoreAdminAuth(Page);

@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { Clock, Copy, AlertTriangle } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import { fetchOrderById } from '@/lib/redux/slice/orderSlice';
+import withAuth from '@/components/common/Auth';
 
 // --- Komponen untuk satu Opsi Bank (Tidak Berubah) ---
 interface BankOptionProps {
@@ -45,7 +46,7 @@ const BankOption: FC<BankOptionProps> = ({ name, accountNumber, accountName, log
 
 
 // --- Komponen Utama Halaman Instruksi Pembayaran ---
-export default function PaymentInstructionPage() {
+function PaymentInstructionPage() {
     const router = useRouter();
     const params = useParams();
     const dispatch = useAppDispatch();
@@ -166,3 +167,5 @@ export default function PaymentInstructionPage() {
         </div>
     );
 }
+
+export default withAuth(PaymentInstructionPage);

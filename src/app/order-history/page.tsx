@@ -1,12 +1,13 @@
+;"use client";
 import OrderHistoryPage from '@/pages/order-history-page'
-import React from 'react'
-import { Suspense } from 'react'
+import React, { Suspense } from 'react'
+import withAuth from '@/components/common/Auth';
 
-
-export default function page() {
+function page() {
   return (
     <Suspense fallback={<div className="p-8 text-center text-gray-500">Loading...</div>}>
-            <OrderHistoryPage/>
-        </Suspense>
+      <OrderHistoryPage />
+    </Suspense>
   )
 }
+export default withAuth(page);

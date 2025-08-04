@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { LoaderIcon } from "lucide-react";
 
-const withSuperAdminAuth = <P extends object>(
+const withStoreAdminAuth = <P extends object>(
   WrappedComponent: React.ComponentType<P>
 ) => {
   const Wrapper = (props: P) => {
@@ -19,11 +19,11 @@ const withSuperAdminAuth = <P extends object>(
         if (!isAuthenticated) {
           toast.error("You must be logged in to view this page.");
           router.replace("/login");
-        } else if (user?.role !== "SUPER_ADMIN") {
+        } else if (user?.role !== "STORE_ADMIN") {
           toast.error("You are not authorized to view this page.");
           router.replace("/");
         } else {
-          setIsChecking(false); // Autentikasi berhasil, berhenti memeriksa
+          setIsChecking(false); // Authentication successful, stop checking
         }
       }
     }, [isAuthenticated, user, router]);
@@ -36,13 +36,15 @@ const withSuperAdminAuth = <P extends object>(
       );
     }
 
-    if (isAuthenticated && user?.role === "SUPER_ADMIN") {
+    if (isAuthenticated && user?.role === "STORE_ADMIN") {
       return <WrappedComponent {...props} />;
     }
+
     return null;
   };
 
+  Wrapper.displayName = `withStoreAdminAuth(${(WrappedComponent.displayName || WrappedComponent.name || 'Component')})`;
   return Wrapper;
 };
 
-export default withSuperAdminAuth;
+export default withStoreAdminAuth;
