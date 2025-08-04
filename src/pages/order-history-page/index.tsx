@@ -2,13 +2,12 @@
 
 import React, { useEffect, useState, type FC } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import { fetchUserOrders } from '@/lib/redux/slice/orderSlice';
 import { ChevronLeft, ChevronRight, ShoppingBagIcon, Filter, Search } from 'lucide-react';
 import { useAuthGuard } from '@/middlewares/useAuthGuard';
 
-// --- Tipe Data dari Slice ---
 type OrderStatus =
     | 'PROCESSED'
     | 'SHIPPED'
@@ -17,7 +16,6 @@ type OrderStatus =
     | 'WAITING_FOR_PAYMENT'
     | 'WAITING_CONFIRMATION';
 
-// --- Komponen Badge Status ---
 const StatusBadge: FC<{ status: OrderStatus }> = ({ status }) => {
     const statusStyles = {
         PROCESSED: 'bg-blue-100 text-blue-700',
@@ -35,7 +33,6 @@ const StatusBadge: FC<{ status: OrderStatus }> = ({ status }) => {
         WAITING_CONFIRMATION: 'Menunggu Konfirmasi',
         WAITING_FOR_PAYMENT: 'Menunggu Pembayaran',
     };
-
     return (
         <span className={`px-2.5 py-1 text-xs font-medium rounded-full inline-flex items-center ${statusStyles[status] || 'bg-gray-100 text-gray-700'}`}>
             <span className={`w-2 h-2 mr-2 rounded-full ${statusStyles[status]?.replace('100', '400').replace('text-', 'bg-') || 'bg-gray-400'}`}></span>
@@ -44,7 +41,6 @@ const StatusBadge: FC<{ status: OrderStatus }> = ({ status }) => {
     );
 };
 
-// --- Komponen Pagination ---
 const Pagination: FC<{ pagination: any, onPageChange: (page: number) => void }> = ({ pagination, onPageChange }) => {
     if (!pagination || pagination.totalPages <= 1) return null;
     return (
@@ -72,39 +68,87 @@ const Pagination: FC<{ pagination: any, onPageChange: (page: number) => void }> 
     );
 };
 
-// --- Komponen Utama Halaman Riwayat Pesanan ---
 export default function OrderHistoryPage() {
     useAuthGuard();
     const dispatch = useAppDispatch();
     const router = useRouter();
+    const pathname = usePathname();
+
+    // --- Patch: Gunakan fallback jika searchParams null ---
+    const rawSearchParams = useSearchParams();
+    const searchParams = rawSearchParams ?? new URLSearchParams();
+
     const { orders, pagination, status, error } = useAppSelector((state) => state.order);
 
-    // State untuk filter dan pagination
-    const [currentPage, setCurrentPage] = useState(1);
-    const [statusFilter, setStatusFilter] = useState('all');
-    const [searchId, setSearchId] = useState('');
-    const [searchIdApplied, setSearchIdApplied] = useState('');
-    const [dateStart, setDateStart] = useState('');
-    const [dateEnd, setDateEnd] = useState('');
+    // --- Ambil state awal dari URL params (searchParams pasti tidak null) ---
+    const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1);
+    const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'all');
+    const [searchId, setSearchId] = useState(searchParams.get('orderId') || '');
+    const [searchIdApplied, setSearchIdApplied] = useState(searchParams.get('orderId') || '');
+    const [dateStart, setDateStart] = useState(searchParams.get('startDate') || '');
+    const [dateEnd, setDateEnd] = useState(searchParams.get('endDate') || '');
 
+    // --- Sync state <-> URL ---
+    function updateUrl(params: Record<string, string | number | undefined>) {
+        const search = new URLSearchParams(searchParams); // searchParams TIDAK null
+        Object.entries(params).forEach(([key, value]) => {
+            if (value === undefined || value === '' || value === null) {
+                search.delete(key);
+            } else {
+                search.set(key, value.toString());
+            }
+        });
+        router.push(`${pathname}?${search.toString()}`);
+    }
+
+    // Sync state jika URL berubah (misal via tombol back/forward)
     useEffect(() => {
-        // Gabungkan semua parameter filter untuk dikirim ke backend
+        setCurrentPage(Number(searchParams.get('page')) || 1);
+        setStatusFilter(searchParams.get('status') || 'all');
+        setSearchId(searchParams.get('orderId') || '');
+        setSearchIdApplied(searchParams.get('orderId') || '');
+        setDateStart(searchParams.get('startDate') || '');
+        setDateEnd(searchParams.get('endDate') || '');
+        // eslint-disable-next-line
+    }, [rawSearchParams]); // trigger jika URL berubah
+
+    // --- Fetch orders on filter change ---
+    useEffect(() => {
         const filters: any = {
             page: currentPage,
             status: statusFilter === 'all' ? undefined : statusFilter,
         };
-        if (searchIdApplied) filters.orderId = Number(searchIdApplied); // Pastikan dikirim sebagai number
+        if (searchIdApplied) filters.orderId = Number(searchIdApplied);
         if (dateStart) filters.startDate = dateStart;
         if (dateEnd) filters.endDate = dateEnd;
         dispatch(fetchUserOrders(filters));
     }, [dispatch, currentPage, statusFilter, searchIdApplied, dateStart, dateEnd]);
 
-    const handlePageChange = (newPage: number) => setCurrentPage(newPage);
-
+    // --- Handler update filter (sync ke URL & state) ---
+    const handlePageChange = (newPage: number) => {
+        setCurrentPage(newPage);
+        updateUrl({ page: newPage });
+    };
+    const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setStatusFilter(e.target.value);
+        setCurrentPage(1);
+        updateUrl({ status: e.target.value, page: 1 });
+    };
     const handleSearchSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setSearchIdApplied(searchId.trim());
         setCurrentPage(1);
+        updateUrl({ orderId: searchId.trim(), page: 1 });
+    };
+    const handleDateStartChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setDateStart(e.target.value);
+        setCurrentPage(1);
+        updateUrl({ startDate: e.target.value, page: 1 });
+    };
+    const handleDateEndChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setDateEnd(e.target.value);
+        setCurrentPage(1);
+        updateUrl({ endDate: e.target.value, page: 1 });
     };
 
     const renderContent = () => {
@@ -207,10 +251,7 @@ export default function OrderHistoryPage() {
                             className="w-full md:w-40 pl-4 pr-2 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-800 placeholder-gray-400 font-medium focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 transition"
                             value={dateStart}
                             max={dateEnd || undefined}
-                            onChange={(e) => {
-                                setDateStart(e.target.value);
-                                setCurrentPage(1);
-                            }}
+                            onChange={handleDateStartChange}
                         />
                         <span className="hidden md:inline-block text-gray-500 px-1">-</span>
                         <input
@@ -218,19 +259,13 @@ export default function OrderHistoryPage() {
                             className="w-full md:w-40 pl-4 pr-2 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-800 placeholder-gray-400 font-medium focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 transition"
                             value={dateEnd}
                             min={dateStart || undefined}
-                            onChange={(e) => {
-                                setDateEnd(e.target.value);
-                                setCurrentPage(1);
-                            }}
+                            onChange={handleDateEndChange}
                         />
                         {/* Status Filter */}
                         <div className="relative w-full md:w-56">
                             <select
                                 value={statusFilter}
-                                onChange={(e) => {
-                                    setStatusFilter(e.target.value);
-                                    setCurrentPage(1);
-                                }}
+                                onChange={handleStatusChange}
                                 className="appearance-none w-full pl-4 pr-10 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-800 font-medium focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 transition"
                             >
                                 <option value="all">Semua Status</option>
