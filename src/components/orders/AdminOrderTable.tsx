@@ -57,7 +57,9 @@ export default function AdminOrderTable({
           {!loading && !error && orders.length > 0 && orders.map((order) => (
             <tr key={order.id} className="hover:bg-gray-50 transition-colors">
               <td className="px-6 py-4 font-medium text-gray-800 whitespace-nowrap">{`FM-${order.id}`}</td>
-              <td className="px-6 py-4 text-gray-600 whitespace-nowrap">{order.user.fullName}</td>
+              <td className="px-6 py-4 text-gray-600 whitespace-nowrap">{order.user?.fullName ?? 
+                <span className="italic text-gray-400">User tidak ditemukan</span>}
+              </td>
               <td className="px-6 py-4 text-gray-600 whitespace-nowrap">
                 {new Date(order.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
               </td>

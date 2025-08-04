@@ -33,7 +33,8 @@ export default function DetailOrderModal({ open, onClose }: { open: boolean; onC
               </span>
             </div>
             <div className="mb-3">
-              <span className="font-semibold">Pelanggan:</span> {selectedOrder.user.fullName} <span className="text-xs text-gray-400">({selectedOrder.user.email})</span>
+            <span className="font-semibold">Pelanggan:</span> {selectedOrder.user?.fullName ?? <span className="italic text-gray-400">User tidak ditemukan</span>}
+            <span className="text-xs text-gray-400">({selectedOrder.user?.email ?? '-'})</span>
             </div>
             <div className="mb-3">
               <span className="font-semibold">Alamat:</span><br />
