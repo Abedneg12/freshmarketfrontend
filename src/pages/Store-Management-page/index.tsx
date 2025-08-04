@@ -59,19 +59,16 @@ export default function StoreManagementPage() {
     setEditingStore(null);
   };
 
-  const handleSave = async (data: Partial<Store>) => {
+  const handleSave = async (data: FormData) => {
     setIsSaving(true);
     try {
       if (editingStore) {
-        await dispatch(updateStore({ id: editingStore.id, ...data })).unwrap();
+        // Kirim ID dan FormData untuk update
+        await dispatch(updateStore({ id: editingStore.id, data })).unwrap();
         toast.success("Store updated successfully!");
       } else {
-        if (data.name && data.address && data.city) {
-          await dispatch(createNewStore(data as Omit<Store, "id">)).unwrap();
-          toast.success("Store created successfully!");
-        } else {
-          throw new Error("Data tidak lengkap untuk membuat toko baru");
-        }
+        await dispatch(createNewStore(data)).unwrap();
+        toast.success("Store created successfully!");
       }
       setShowForm(false);
       setEditingStore(null);

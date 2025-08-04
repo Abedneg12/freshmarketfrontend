@@ -1,6 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
-import { LoaderIcon } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { LoaderIcon, Camera, Trash2 } from "lucide-react";
 import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -20,7 +20,7 @@ const markerIcon = new L.Icon({
 
 interface StoreFormProps {
   store?: Store | null;
-  onSave: (data: Partial<Store>) => void;
+  onSave: (data: FormData) => void;
   onCancel: () => void;
   isLoading: boolean;
 }
@@ -47,9 +47,15 @@ export default function StoreForm({
     name: "",
     address: "",
     city: "",
-    latitude: -6.2088, // Default ke Jakarta
+    latitude: -6.2088,
     longitude: 106.8456,
   });
+
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isImageRemoved, setIsImageRemoved] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const [mapPosition, setMapPosition] = useState<[number, number]>([
     formData.latitude,
@@ -57,7 +63,7 @@ export default function StoreForm({
   ]);
 
   const [cityQuery, setCityQuery] = useState("");
-  const [debouncedCityQuery] = useDebounce(cityQuery, 1500);
+  const [debouncedCityQuery] = useDebounce(cityQuery, 700);
 
   useEffect(() => {
     if (store) {
@@ -69,8 +75,22 @@ export default function StoreForm({
         longitude: store.longitude,
       });
       setMapPosition([store.latitude, store.longitude]);
+      setImagePreview(store.imageUrl || null);
+      setIsImageRemoved(false);
     }
   }, [store]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [menuRef]);
 
   useEffect(() => {
     if (debouncedCityQuery) {
@@ -105,21 +125,58 @@ export default function StoreForm({
       ...prev,
       [name]: value,
     }));
-
     if (name === "city") {
       setCityQuery(value);
     }
   };
 
-  const handleMapClick = (e: L.LeafletMouseEvent) => {
-    const { lat, lng } = e.latlng;
-    setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng }));
-    setMapPosition([lat, lng]);
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+      setIsImageRemoved(false);
+      setIsMenuOpen(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setIsImageRemoved(true);
+    setIsMenuOpen(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    const data = new FormData();
+    data.append("name", formData.name);
+    data.append("address", formData.address);
+    data.append("city", formData.city);
+    data.append("latitude", String(formData.latitude));
+    data.append("longitude", String(formData.longitude));
+    if (imageFile) {
+      data.append("imageUrl", imageFile);
+    }
+    if (isImageRemoved) {
+      data.append("removeImage", "true");
+    }
+    onSave(data);
+  };
+
+  const MapEvents = ({
+    onClick,
+  }: {
+    onClick: (e: L.LeafletMouseEvent) => void;
+  }) => {
+    const map = useMap();
+    useEffect(() => {
+      map.on("click", onClick);
+      return () => {
+        map.off("click", onClick);
+      };
+    }, [map, onClick]);
+    return null;
   };
 
   return (
@@ -128,6 +185,65 @@ export default function StoreForm({
         {store ? "Edit Store" : "Add New Store"}
       </h2>
       <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Store Image
+          </label>
+          <div className="mt-1 flex items-center space-x-4">
+            <div className="relative">
+              <img
+                src={
+                  imagePreview ||
+                  `https://ui-avatars.com/api/?name=${formData.name.charAt(
+                    0
+                  )}&background=e0e0e0&color=757575&size=128`
+                }
+                alt="Store Preview"
+                className="h-32 w-32 rounded-lg object-cover border border-gray-200 bg-gray-100"
+              />
+              <div ref={menuRef} className="absolute bottom-1 right-1">
+                <button
+                  type="button"
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="bg-green-500 rounded-full p-2 cursor-pointer hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                >
+                  <Camera className="h-4 w-4 text-white" />
+                </button>
+                {isMenuOpen && (
+                  <div className="absolute top-0 left-full ml-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                    <div className="py-1">
+                      <label
+                        htmlFor="image-upload"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                      >
+                        <Camera className="h-4 w-4 mr-2" />
+                        Ubah Foto
+                      </label>
+                      <input
+                        id="image-upload"
+                        name="imageUrl"
+                        type="file"
+                        className="sr-only"
+                        onChange={handleImageChange}
+                      />
+                      {imagePreview && (
+                        <button
+                          type="button"
+                          onClick={handleRemoveImage}
+                          className="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Hapus Foto
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Store Name
@@ -179,7 +295,7 @@ export default function StoreForm({
               center={mapPosition}
               zoom={13}
               style={{ height: "100%", width: "100%" }}
-              scrollWheelZoom={false}
+              scrollWheelZoom={true}
             >
               <ChangeView center={mapPosition} zoom={13} />
               <TileLayer
@@ -190,7 +306,17 @@ export default function StoreForm({
                 position={[formData.latitude, formData.longitude]}
                 icon={markerIcon}
               />
-              <MapEvents onClick={handleMapClick} />
+              <MapEvents
+                onClick={(e) => {
+                  const { lat, lng } = e.latlng;
+                  setFormData((prev) => ({
+                    ...prev,
+                    latitude: lat,
+                    longitude: lng,
+                  }));
+                  setMapPosition([lat, lng]);
+                }}
+              />
             </MapContainer>
           </div>
           <p className="text-xs text-gray-500 text-center">
@@ -224,21 +350,3 @@ export default function StoreForm({
     </div>
   );
 }
-
-const MapEvents = ({
-  onClick,
-}: {
-  onClick: (e: L.LeafletMouseEvent) => void;
-}) => {
-  const map = useMap();
-
-  useEffect(() => {
-    map.on("click", onClick);
-
-    return () => {
-      map.off("click", onClick);
-    };
-  }, [map, onClick]);
-
-  return null;
-};
