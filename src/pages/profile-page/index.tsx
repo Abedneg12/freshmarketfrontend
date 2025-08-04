@@ -8,6 +8,7 @@ import PersonalInformation from "@/components/profile/personal-information";
 import Security from "@/components/profile/security";
 import { useRouter } from "next/navigation";
 import { fetchProfile } from "@/lib/redux/slice/profileSlice";
+import { useAuthGuard } from "@/lib/hooks/useAuthGuard";
 
 // Gunakan Dynamic Import untuk AddressManagement
 const AddressManagement = dynamic(
@@ -23,6 +24,7 @@ const AddressManagement = dynamic(
 );
 
 export default function ProfilePage() {
+  useAuthGuard();
   const [activeTab, setActiveTab] = useState("personal");
   const router = useRouter();
   const dispatch = useAppDispatch();

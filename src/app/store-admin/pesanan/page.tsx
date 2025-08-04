@@ -12,8 +12,11 @@ import AdminOrderTable from "@/components/orders/AdminOrderTable";
 import ConfirmModal from "@/components/orders/ConfirmModal";
 import Pagination from "@/components/orders/Pagination";
 import DetailOrderModal from "@/components/orders/DetailOrderModal";
+import { useAuthGuard } from "@/lib/hooks/useAuthGuard";
+
 
 export default function AdminOrdersPage() {
+  useAuthGuard({ requiredRole: ["STORE_ADMIN"], redirectTo: "/login" });
   const dispatch = useAppDispatch();
   const { orders, pagination, loading, error, actionLoading, actionError, actionSuccess } = useAppSelector((state) => state.adminorders);
 

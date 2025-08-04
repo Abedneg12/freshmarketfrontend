@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import { fetchUserOrders } from '@/lib/redux/slice/orderSlice';
 import { ChevronLeft, ChevronRight, ShoppingBagIcon, Filter, Search } from 'lucide-react';
+import { useAuthGuard } from '@/lib/hooks/useAuthGuard';
 
 // --- Tipe Data dari Slice ---
 type OrderStatus =
@@ -73,6 +74,7 @@ const Pagination: FC<{ pagination: any, onPageChange: (page: number) => void }> 
 
 // --- Komponen Utama Halaman Riwayat Pesanan ---
 export default function OrderHistoryPage() {
+    useAuthGuard();
     const dispatch = useAppDispatch();
     const router = useRouter();
     const { orders, pagination, status, error } = useAppSelector((state) => state.order);

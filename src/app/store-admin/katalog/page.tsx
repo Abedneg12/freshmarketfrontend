@@ -4,6 +4,7 @@ import React, { useState, type FC, useEffect } from 'react';
 import { Search, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import { fetchAdminProducts } from '@/lib/redux/slice/storeadminproductSlice';
+import { useAuthGuard } from '@/lib/hooks/useAuthGuard';
 
 // --- Tipe Data dari Slice ---
 interface IAdminProduct {
@@ -46,6 +47,7 @@ const Pagination: FC<{ pagination: any, onPageChange: (page: number) => void }> 
 
 // --- Komponen Utama Halaman Katalog ---
 export default function AdminCatalogPage() {
+    useAuthGuard({ requiredRole: "STORE_ADMIN", redirectTo: "/login" });
     const dispatch = useAppDispatch();
     // Mengambil data dari state 'adminProducts' yang benar
     const { products, pagination, loading, error } = useAppSelector((state) => state.adminProducts);

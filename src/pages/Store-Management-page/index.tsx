@@ -13,6 +13,7 @@ import StoreTable from "@/components/market/StoreTable";
 import PaginationControls from "@/components/market/PaginationControls";
 import { Store } from "@/lib/interface/store.type";
 import { toast } from "sonner";
+import { useAuthGuard } from "@/lib/hooks/useAuthGuard";
 
 // Gunakan Dynamic Import untuk StoreForm ---
 const StoreForm = dynamic(() => import("@/components/market/StoreForm"), {
@@ -25,6 +26,7 @@ const StoreForm = dynamic(() => import("@/components/market/StoreForm"), {
 });
 
 export default function StoreManagementPage() {
+  useAuthGuard({ requiredRole: "SUPER_ADMIN", redirectTo: "/login" });
   const dispatch = useAppDispatch();
   const { stores, loading, error, currentPage, totalPages } = useAppSelector(
     (state) => state.adminStores

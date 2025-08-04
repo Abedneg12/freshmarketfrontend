@@ -5,6 +5,7 @@ import axios from 'axios';
 import { apiUrl } from '../../config';
 import { useAppSelector } from '@/lib/redux/hooks';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import { useAuthGuard } from '@/lib/hooks/useAuthGuard';
 
 // Interface for the stock summary report data from the backend
 interface StockSummaryReportItem {
@@ -16,6 +17,7 @@ interface StockSummaryReportItem {
 }
 
 export default function StockReportsPage() {
+  useAuthGuard({ requiredRole: ["SUPER_ADMIN", "STORE_ADMIN"], redirectTo: "/login" });
   const { token } = useAppSelector((state) => state.auth);
   const [filters, setFilters] = useState({
     year: new Date().getFullYear(),
