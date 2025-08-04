@@ -1,9 +1,10 @@
 'use client';
 import DashboardPage from '@/pages/Dashboard-page';
 import React from 'react'
+import withSuperAdminAuth from '@/components/common/SuperAdminAuth';
 
-export default function page() {
-  return (
-    <DashboardPage />
-  )
-}
+const Page = () => {
+  return <DashboardPage />;
+};
+
+export default withSuperAdminAuth(Page);

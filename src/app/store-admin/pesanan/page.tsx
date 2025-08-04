@@ -11,6 +11,7 @@ import {
   clearAdminOrderActionStatus,
 } from '@/lib/redux/slice/adminorderslice';
 import { Toaster, toast } from 'sonner';
+import withStoreAdminAuth from '@/components/common/StoreAdminAuth';
 
 // --- Komponen Modal Konfirmasi (Reusable) ---
 const ConfirmModal = ({
@@ -116,7 +117,7 @@ const Pagination = ({ pagination, onPageChange }: { pagination: any, onPageChang
 };
 
 // --- Komponen Utama ---
-export default function AdminOrdersPage() {
+function AdminOrdersPage() {
   const dispatch = useAppDispatch();
   const { orders, pagination, loading, error, actionLoading, actionError, actionSuccess } = useAppSelector((state) => state.adminorders);
 
@@ -331,3 +332,5 @@ export default function AdminOrdersPage() {
     </div>
   );
 }
+
+export default withStoreAdminAuth(AdminOrdersPage);

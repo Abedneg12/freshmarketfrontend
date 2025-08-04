@@ -1,9 +1,9 @@
 'use client';
 import DiscountPage from '@/pages/Discount-page';
-import React from 'react'
+import withStoreAdminAuth from '@/components/common/StoreAdminAuth';
 
-export default function page() {
-  return (
-    <DiscountPage />
-  )
-}
+const Page = () => {
+  return <DiscountPage />;
+};
+
+export default withStoreAdminAuth(Page);

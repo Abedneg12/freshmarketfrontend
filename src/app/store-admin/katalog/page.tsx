@@ -4,6 +4,7 @@ import React, { useState, type FC, useEffect } from 'react';
 import { Search, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import { fetchAdminProducts } from '@/lib/redux/slice/storeadminproductSlice';
+import withStoreAdminAuth from '@/components/common/StoreAdminAuth';
 
 // --- Tipe Data dari Slice ---
 interface IAdminProduct {
@@ -45,7 +46,7 @@ const Pagination: FC<{ pagination: any, onPageChange: (page: number) => void }> 
 };
 
 // --- Komponen Utama Halaman Katalog ---
-export default function AdminCatalogPage() {
+function AdminCatalogPage() {
     const dispatch = useAppDispatch();
     // Mengambil data dari state 'adminProducts' yang benar
     const { products, pagination, loading, error } = useAppSelector((state) => state.adminProducts);
@@ -167,3 +168,6 @@ export default function AdminCatalogPage() {
         </div>
     );
 }
+
+
+export default withStoreAdminAuth(AdminCatalogPage);

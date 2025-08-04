@@ -7,6 +7,7 @@ import { fetchProfile } from '@/lib/redux/slice/profileSlice';
 // 1. Impor thunk untuk mengambil aktivitas
 import { fetchDashboardSummary, fetchRecentActivity } from '@/lib/redux/slice/storeadminDashboardSlice'; 
 import { ShoppingCart, Archive, BarChart3, ArrowRight, CheckCircle2, Truck, XCircle } from 'lucide-react';
+import withStoreAdminAuth from '@/components/common/StoreAdminAuth';
 
 // --- Komponen SummaryCard (Tidak Berubah) ---
 interface SummaryCardProps {
@@ -66,7 +67,7 @@ const ActivityItem: FC<{ log: any }> = ({ log }) => {
 
 
 
-export default function StoreAdminDashboardPage() {
+function StoreAdminDashboardPage() {
     const { user, isAuthenticated } = useAppSelector((state) => state.auth);
     // 2. Ambil data aktivitas terbaru dari Redux store
     const { summary, recentActivity, loading: summaryLoading } = useAppSelector((state) => state.storeAdminDashboard);
@@ -134,3 +135,5 @@ export default function StoreAdminDashboardPage() {
         </main>
     );
 }
+
+export default withStoreAdminAuth(StoreAdminDashboardPage);

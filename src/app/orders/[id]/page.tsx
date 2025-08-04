@@ -21,6 +21,7 @@ import {
     AlertCircle,
     MapPin
 } from 'lucide-react';
+import withAuth from '@/components/common/Auth';
 
 type OrderStatus =
     | 'PROCESSED'
@@ -49,7 +50,7 @@ const StatusBadge: FC<{ status: OrderStatus }> = ({ status }) => {
     );
 };
 
-export default function OrderDetailPage() {
+function OrderDetailPage() {
     const dispatch = useAppDispatch();
     const router = useRouter();
     const params = useParams();
@@ -232,3 +233,5 @@ export default function OrderDetailPage() {
         </div>
     );
 }
+
+export default withAuth(OrderDetailPage);
